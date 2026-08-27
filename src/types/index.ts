@@ -101,6 +101,7 @@ export interface שיא {
 }
 
 export interface מצבמשחק {
+  שםשחקן: string;
   מסךפעיל: מסך;
   ניקוד: number;
   מכפיל: number;

@@ -57,6 +57,19 @@ const הגדרותברירתמחדל: הגדרות = {
   עוצמתסאונד: 0.8,
 };
 
+function טעןשםשחקן(): string {
+  try {
+    const שמור = localStorage.getItem('שברי-ביטוי-שם-שחקן');
+    if (שמור && שמור.trim()) return שמור;
+  } catch { /* ignore */ }
+  const מסאקראי = Math.floor(1000 + Math.random() * 9000);
+  const שםדיפולט = `שחקן#${מסאקראי}`;
+  try {
+    localStorage.setItem('שברי-ביטוי-שם-שחקן', שםדיפולט);
+  } catch { /* ignore */ }
+  return שםדיפולט;
+}
+
 function טעןמטבעות(): number {
   try {
     return parseInt(localStorage.getItem('שברי-ביטוי-מטבעות') || '50', 10);
@@ -108,7 +121,7 @@ function טעןשיאאישי(): number {
 
 function חשבמהירות(שלב: number, רמה: רמתקושי, האטה: boolean, טירוף: boolean): number {
   if (טירוף) {
-    return Math.max(1400 - שלב * 35, 750); // טירוף מהיר במיוחד!
+    return Math.max(1400 - שלב * 35, 750);
   }
   const בסיס = רמה === 'קל' ? 3800 : רמה === 'בינוני' ? 2600 : 1800;
   const הפחתה = שלב * (רמה === 'קל' ? 25 : רמה === 'בינוני' ? 45 : 65);
@@ -137,6 +150,7 @@ let מקורביטויים: ביטוי[] = [];
 const שימשוביטויים = new Set<number>();
 
 interface פעולותחנות {
+  עדכןשםשחקן: (שם: string) => void;
   שנהמסך: (מסך: מסך) => void;
   התחלמשחק: (מצב?: מצבמשחקסוג) => void;
   עדכןביטוי: () => void;
@@ -155,10 +169,11 @@ interface פעולותחנות {
   קנהסקין: (סקין: סוגסקין) => boolean;
   בחרסקין: (סקין: סוגסקין) => void;
   הצלתמשחק: () => boolean;
-  הפחתזמןטירוף: (שניות?: number) => boolean; // returns true if time up
+  הפחתזמןטירוף: (שניות?: number) => boolean;
 }
 
 export const useGameStore = create<מצבמשחק & פעולותחנות>((set, get) => ({
+  שםשחקן: טעןשםשחקן(),
   מסךפעיל: 'פתיחה',
   ניקוד: 0,
   מכפיל: 1,
@@ -184,6 +199,12 @@ export const useGameStore = create<מצבמשחק & פעולותחנות>((set, 
   השתמשבהצלה: false,
   זמןטירוףנותר: 60,
   גלגלסובבלאחרונה: טעןגלגללאחרונה(),
+
+  עדכןשםשחקן: (שם) => {
+    const שםנקי = שם.trim() || 'שחקן';
+    localStorage.setItem('שברי-ביטוי-שם-שחקן', שםנקי);
+    set({ שםשחקן: שםנקי });
+  },
 
   שנהמסך: (מסך) => set({ מסךפעיל: מסך }),
 
@@ -279,7 +300,6 @@ export const useGameStore = create<מצבמשחק & פעולותחנות>((set, 
 
     localStorage.setItem('שברי-ביטוי-מטבעות', String(מטבעותחדש));
 
-    // במצב טירוף: הוסף +2 שניות לשעון!
     const זמןחדש = מצבמשחק === 'טירוף' ? Math.min(זמןטירוףנותר + 2, 60) : זמןטירוףנותר;
 
     set({
@@ -304,7 +324,6 @@ export const useGameStore = create<מצבמשחק & פעולותחנות>((set, 
       return false;
     }
 
-    // במצב טירוף: הפחת 3 שניות על פספוס במקום לבבות
     if (מצבמשחק === 'טירוף') {
       const זמןחדש = Math.max(זמןטירוףנותר - 3, 0);
       set({
@@ -464,7 +483,7 @@ export const useGameStore = create<מצבמשחק & פעולותחנות>((set, 
   },
 
   שמורשיא: () => {
-    const { ניקוד, שיאאישי, שיאים, הגדרות, שלב, מצבמשחק: מצב, סקיניםפתוחים } = get();
+    const { ניקוד, שיאאישי, שיאים, הגדרות, שלב, מצבמשחק: מצב, סקיניםפתוחים, שםשחקן } = get();
     const שיאחדש = Math.max(ניקוד, שיאאישי);
 
     if (שיאחדש >= 10000 && !סקיניםפתוחים.includes('זהב')) {
@@ -475,7 +494,7 @@ export const useGameStore = create<מצבמשחק & פעולותחנות>((set, 
 
     const רשימהחדשה: שיא[] = [
       ...שיאים,
-      { ניקוד, תאריך: new Date().toLocaleDateString('he-IL'), רמה: הגדרות.רמה, שלב, מצב },
+      { שם: שםשחקן, ניקוד, תאריך: new Date().toLocaleDateString('he-IL'), רמה: הגדרות.רמה, שלב, מצב },
     ]
       .sort((א, ב) => ב.ניקוד - א.ניקוד)
       .slice(0, 10);

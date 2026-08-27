@@ -23,8 +23,21 @@ const קטגוריותרשימה: קטגוריהסוג[] = [
   'כללי',
 ];
 
+const שמותאקראיים = [
+  'מלך המגנטים 🧲',
+  'אלוף הביטויים 🏆',
+  'סברס לוהט 🌵',
+  'פלאפל מאסטר 🧆',
+  'נינג׳ה ישראלי ⚡',
+  'מוח מבריק 💡',
+  'כוכב הניבים 🌟',
+  'שועל קרבות 🦊',
+];
+
 export function StartScreen() {
   const {
+    שםשחקן,
+    עדכןשםשחקן,
     שנהמסך,
     התחלמשחק,
     הגדרות,
@@ -37,11 +50,26 @@ export function StartScreen() {
   } = useGameStore();
 
   const [מראהקטגוריות, setמראהקטגוריות] = useState(false);
+  const [מראהעריכתשם, setמראהעריכתשם] = useState(false);
+  const [שםקלט, setשםקלט] = useState(שםשחקן);
+
   const רמות = ['קל', 'בינוני', 'מטורף'] as const;
 
   // בדיקת סיבוב יומי חינם (20 שעות)
   const שעותשעברו = (Date.now() - גלגלסובבלאחרונה) / (1000 * 60 * 60);
   const סיבובחינם = שעותשעברו >= 20;
+
+  const שמורשם = () => {
+    if (שםקלט.trim()) {
+      עדכןשםשחקן(שםקלט.trim());
+      setמראהעריכתשם(false);
+    }
+  };
+
+  const צורשםאקראי = () => {
+    const רנד = שמותאקראיים[Math.floor(Math.random() * שמותאקראיים.length)];
+    setשםקלט(רנד);
+  };
 
   return (
     <div
@@ -70,9 +98,9 @@ export function StartScreen() {
         ))}
       </div>
 
-      {/* ━━ שורת מטבעות, חנות וגלגל המזל העליונה (גדולה, ברורה ומרווחת) ━━ */}
-      <div className="relative z-10 w-full px-5 pt-safe-top pt-6 pb-2 grid grid-cols-2 gap-3.5">
-        {/* 🛒 כפתור חנות ומטבעות */}
+      {/* ━━ 1. שורת חנות וגלגל המזל העליונה (גדולה, רחבה ומרווחת) ━━ */}
+      <div className="relative z-10 w-full px-5 pt-safe-top pt-5 pb-1 grid grid-cols-2 gap-3.5">
+        {/* 🛒 חנות ומטבעות */}
         <button
           onClick={() => שנהמסך('חנות')}
           className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-yellow-500/25 to-amber-500/15 border-2 border-yellow-400/60 flex items-center justify-between text-yellow-300 font-bold text-base shadow-lg active:scale-95 transition-transform"
@@ -87,7 +115,7 @@ export function StartScreen() {
           </span>
         </button>
 
-        {/* 🎡 כפתור גלגל המזל */}
+        {/* 🎡 גלגל המזל */}
         <button
           onClick={() => שנהמסך('גלגל')}
           className="relative w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 border-2 border-purple-300/60 flex items-center justify-center gap-2 text-white font-bold text-base shadow-xl active:scale-95 transition-transform"
@@ -103,10 +131,31 @@ export function StartScreen() {
         </button>
       </div>
 
+      {/* ━━ 2. באנר פרופיל שחקן (Gamer Profile Badge) ━━ */}
+      <div className="relative z-10 w-full px-5 pt-1 pb-1">
+        <button
+          onClick={() => {
+            setשםקלט(שםשחקן);
+            setמראהעריכתשם(true);
+          }}
+          className="w-full py-2 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 flex items-center justify-between text-white text-xs font-bold shadow active:scale-98 transition-all"
+          style={{ fontFamily: '"Varela Round"' }}
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-base">👤</span>
+            <span className="text-white/70">שחקן מחובר:</span>
+            <span className="text-yellow-300 font-bold text-sm">{שםשחקן}</span>
+          </div>
+          <span className="text-cyan-300 bg-cyan-950/40 border border-cyan-400/30 px-2 py-0.5 rounded-md text-[11px]">
+            ערוך שם ✏️
+          </span>
+        </button>
+      </div>
+
       {/* חלק עליון: דמות מגנטי + כותרת */}
-      <div className="relative z-10 flex flex-col items-center pt-1 pb-1">
-        {/* 🐣 מגנטי המנחה - מותאם לסקין הפעיל */}
-        <div className="mb-2">
+      <div className="relative z-10 flex flex-col items-center pt-0 pb-1">
+        {/* 🐣 מגנטי המנחה */}
+        <div className="mb-1">
           <MascotMagneti מצב="שמח" סקין={סקיןפעיל} />
         </div>
 
@@ -116,7 +165,7 @@ export function StartScreen() {
           className="font-bold text-center"
           style={{
             fontFamily: '"Varela Round", sans-serif',
-            fontSize: 'clamp(2rem, 9vw, 2.8rem)',
+            fontSize: 'clamp(1.9rem, 8.5vw, 2.6rem)',
             background: 'linear-gradient(135deg, #f7971e, #ffd200, #fc6767)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -127,7 +176,7 @@ export function StartScreen() {
         </motion.h1>
 
         <p
-          className="text-white/60 text-center text-xs mt-0.5"
+          className="text-white/60 text-center text-xs"
           style={{ fontFamily: '"Varela Round"' }}
         >
           חבר את הביטויים הישראליים! 🇮🇱
@@ -138,7 +187,7 @@ export function StartScreen() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 w-full px-5 flex flex-col gap-2.5"
+        className="relative z-10 w-full px-5 flex flex-col gap-2"
       >
         {/* בחירת קטגוריה */}
         <button
@@ -182,7 +231,7 @@ export function StartScreen() {
       </motion.div>
 
       {/* כפתורים ראשיים */}
-      <div className="relative z-10 w-full px-5 pb-safe-bottom pb-5 flex flex-col gap-2">
+      <div className="relative z-10 w-full px-5 pb-safe-bottom pb-4 flex flex-col gap-2">
         {/* כפתור שחק רגיל */}
         <motion.button
           whileTap={{ scale: 0.96 }}
@@ -249,6 +298,74 @@ export function StartScreen() {
           </button>
         </div>
       </div>
+
+      {/* ━━ Modal עריכת שם שחקן ━━ */}
+      <AnimatePresence>
+        {מראהעריכתשם && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setמראהעריכתשם(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              className="bg-slate-900 border-2 border-yellow-400/40 rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center"
+              style={{ direction: 'rtl', fontFamily: '"Varela Round"' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-4xl mb-2">👤</div>
+              <h2 className="text-xl font-bold text-white mb-1">פרופיל שחקן</h2>
+              <p className="text-white/60 text-xs mb-4">
+                השם שלך יופיע בטבלת השיאים ובאתגרים מול חברים
+              </p>
+
+              {/* שדה קלט */}
+              <div className="mb-3">
+                <input
+                  type="text"
+                  maxLength={18}
+                  value={שםקלט}
+                  onChange={(e) => setשםקלט(e.target.value)}
+                  placeholder="הקלד את שמך כאן..."
+                  className="w-full py-3 px-4 rounded-2xl bg-white/10 border border-white/25 text-white font-bold text-center text-base focus:outline-none focus:border-yellow-400"
+                  style={{ fontFamily: '"Varela Round"' }}
+                />
+              </div>
+
+              {/* כפתור הצעת כינוי מגניב */}
+              <button
+                type="button"
+                onClick={צורשםאקראי}
+                className="text-xs text-yellow-300 hover:text-yellow-200 font-bold mb-5 flex items-center justify-center gap-1 w-full"
+              >
+                <span>🎲 הצע לי כינוי גיימר מגניב!</span>
+              </button>
+
+              {/* כפתורי שמירה / ביטול */}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={שמורשם}
+                  className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 text-purple-950 font-bold text-base shadow-lg active:scale-95"
+                >
+                  שמור שם ✓
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setמראהעריכתשם(false)}
+                  className="py-3 px-4 rounded-2xl bg-white/10 text-white/70 font-bold text-sm"
+                >
+                  ביטול
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modal בחירת קטגוריות */}
       <AnimatePresence>

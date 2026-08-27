@@ -32,11 +32,11 @@ function Confetti() {
 
 export function LoseScreen() {
   const {
+    שםשחקן,
     ניקוד,
     שיאאישי,
     שלב,
     הצלחות,
-    הגדרות,
     פספוסים,
     מצבמשחק,
     מטבעות,
@@ -53,16 +53,16 @@ export function LoseScreen() {
 
   const handleWhatsAppChallenge = () => {
     const text = הואטירוף
-      ? `השגתי ${ניקוד.toLocaleString('he-IL')} נקודות וחיברתי ${הצלחות} ביטויים ב-60 שניות טירוף בשברי ביטוי! ⚡🔥\nתנסו לנצח אותי בקישור: ${window.location.href}`
-      : `השגתי ${ניקוד.toLocaleString('he-IL')} נקודות וחיברתי ${הצלחות} ביטויים בשברי ביטוי! 🧲🔥\nתנסו לנצח אותי בקישור: ${window.location.href}`;
+      ? `${שםשחקן} השיג ${ניקוד.toLocaleString('he-IL')} נקודות וחיבר ${הצלחות} ביטויים ב-60 שניות טירוף בשברי ביטוי! ⚡🔥\nתנסו לנצח אותי בקישור: ${window.location.href}`
+      : `${שםשחקן} השיג ${ניקוד.toLocaleString('he-IL')} נקודות וחיבר ${הצלחות} ביטויים בשברי ביטוי! 🧲🔥\nתנסו לנצח אותי בקישור: ${window.location.href}`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, '_blank');
   };
 
   const handleShare = async () => {
     const text = הואטירוף
-      ? `השגתי ${ניקוד.toLocaleString('he-IL')} נקודות ב-60 שניות טירוף בשברי ביטוי! ⚡🔥`
-      : `השגתי ${ניקוד.toLocaleString('he-IL')} נקודות וחיברתי ${הצלחות} ביטויים בשברי ביטוי! 🧲🔥\nתנסו לנצח אותי! 🇮🇱`;
+      ? `${שםשחקן} השיג ${ניקוד.toLocaleString('he-IL')} נקודות ב-60 שניות טירוף בשברי ביטוי! ⚡🔥`
+      : `${שםשחקן} השיג ${ניקוד.toLocaleString('he-IL')} נקודות וחיבר ${הצלחות} ביטויים בשברי ביטוי! 🧲🔥\nתנסו לנצח אותי! 🇮🇱`;
 
     if (navigator.share) {
       try {
@@ -103,12 +103,15 @@ export function LoseScreen() {
           {הואטירוף ? '⏱️' : שלב > 15 ? '🏆' : שלב > 8 ? '🎯' : '😅'}
         </motion.div>
 
-        {/* כותרת */}
+        {/* כותרת ושם שחקן */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
+          <div className="text-white/60 text-xs font-bold mb-1" style={{ fontFamily: '"Varela Round"' }}>
+            👤 {שםשחקן}
+          </div>
           <h2
             className="font-bold text-white"
             style={{ fontFamily: '"Varela Round"', fontSize: 'clamp(1.8rem, 7vw, 2.4rem)' }}
