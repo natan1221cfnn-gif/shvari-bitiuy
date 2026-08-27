@@ -98,19 +98,19 @@ export function StartScreen() {
         ))}
       </div>
 
-      {/* ━━ 1. שורת חנות וגלגל המזל העליונה (גדולה, רחבה ומרווחת) ━━ */}
-      <div className="relative z-10 w-full px-4 pt-safe-top pt-6 pb-2 grid grid-cols-2 gap-3">
+      {/* ━━ 1. שורת חנות וגלגל המזל העליונה (גודל נורמלי, נקי ונעים בעין) ━━ */}
+      <div className="relative z-10 w-full px-4 pt-safe-top pt-3 pb-1 grid grid-cols-2 gap-2.5">
         {/* 🛒 כפתור חנות ומטבעות */}
         <button
           onClick={() => שנהמסך('חנות')}
-          className="w-full h-15 min-h-[58px] py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-600/30 to-yellow-500/20 border-2 border-yellow-400/80 flex items-center justify-between text-yellow-300 font-bold text-base shadow-xl active:scale-95 transition-all"
+          className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-yellow-500/20 to-amber-500/10 border border-yellow-400/50 flex items-center justify-between text-yellow-300 font-bold text-xs shadow-md active:scale-95 transition-all"
           style={{ fontFamily: '"Varela Round"' }}
         >
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🪙</span>
-            <span className="text-xl text-yellow-200 font-black">{מטבעות}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-lg">🪙</span>
+            <span className="text-sm text-yellow-200 font-bold">{מטבעות}</span>
           </div>
-          <span className="text-xs bg-yellow-400 text-purple-950 font-black px-2.5 py-1 rounded-xl shadow">
+          <span className="text-[11px] bg-yellow-400/90 text-purple-950 font-bold px-2 py-0.5 rounded-lg shadow">
             חנות 🛒
           </span>
         </button>
@@ -118,13 +118,13 @@ export function StartScreen() {
         {/* 🎡 כפתור גלגל המזל */}
         <button
           onClick={() => שנהמסך('גלגל')}
-          className="relative w-full h-15 min-h-[58px] py-3 px-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 border-2 border-purple-300/80 flex items-center justify-center gap-2 text-white font-black text-base shadow-xl active:scale-95 transition-all"
+          className="relative w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 border border-purple-300/50 flex items-center justify-center gap-1.5 text-white font-bold text-xs shadow-md active:scale-95 transition-all"
           style={{ fontFamily: '"Varela Round"' }}
         >
-          <span className="text-2xl">🎡</span>
-          <span className="text-base">גלגל המזל</span>
+          <span className="text-lg">🎡</span>
+          <span className="text-xs">גלגל המזל</span>
           {סיבובחינם && (
-            <span className="absolute -top-2.5 -right-1 bg-red-500 text-xs text-white px-2 py-0.5 rounded-full font-black animate-bounce shadow-lg border border-white/50">
+            <span className="absolute -top-2 -right-1 bg-red-500 text-[10px] text-white px-1.5 py-0.2 rounded-full font-bold animate-bounce shadow-md border border-white/40">
               חינם! 🎁
             </span>
           )}
@@ -132,21 +132,21 @@ export function StartScreen() {
       </div>
 
       {/* ━━ 2. באנר פרופיל שחקן (Gamer Profile Badge) ━━ */}
-      <div className="relative z-10 w-full px-5 pt-1 pb-1">
+      <div className="relative z-10 w-full px-4 pt-1 pb-1">
         <button
           onClick={() => {
             setשםקלט(שםשחקן);
             setמראהעריכתשם(true);
           }}
-          className="w-full py-2 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 flex items-center justify-between text-white text-xs font-bold shadow active:scale-98 transition-all"
+          className="w-full py-1.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 flex items-center justify-between text-white text-xs font-bold shadow-sm active:scale-98 transition-all"
           style={{ fontFamily: '"Varela Round"' }}
         >
-          <div className="flex items-center gap-2">
-            <span className="text-base">👤</span>
-            <span className="text-white/70">שחקן מחובר:</span>
-            <span className="text-yellow-300 font-bold text-sm">{שםשחקן}</span>
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="text-sm">👤</span>
+            <span className="text-white/60 text-[11px]">שחקן:</span>
+            <span className="text-yellow-300 font-bold text-xs truncate">{שםשחקן}</span>
           </div>
-          <span className="text-cyan-300 bg-cyan-950/40 border border-cyan-400/30 px-2 py-0.5 rounded-md text-[11px]">
+          <span className="text-cyan-300 bg-cyan-950/50 border border-cyan-400/30 px-2 py-0.5 rounded-md text-[10px] shrink-0">
             ערוך שם ✏️
           </span>
         </button>
@@ -187,7 +187,7 @@ export function StartScreen() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 w-full px-5 flex flex-col gap-2"
+        className="relative z-10 w-full px-4 flex flex-col gap-2"
       >
         {/* בחירת קטגוריה */}
         <button
@@ -231,7 +231,7 @@ export function StartScreen() {
       </motion.div>
 
       {/* כפתורים ראשיים */}
-      <div className="relative z-10 w-full px-5 pb-safe-bottom pb-4 flex flex-col gap-2">
+      <div className="relative z-10 w-full px-4 pb-safe-bottom pb-3 flex flex-col gap-2">
         {/* כפתור שחק רגיל */}
         <motion.button
           whileTap={{ scale: 0.96 }}
@@ -277,21 +277,21 @@ export function StartScreen() {
         <div className="flex gap-2">
           <button
             onClick={() => שנהמסך('שיאים')}
-            className="flex-1 py-2.5 rounded-2xl font-bold text-white text-xs bg-white/10 border border-white/15"
+            className="flex-1 py-2 rounded-2xl font-bold text-white text-xs bg-white/10 border border-white/15"
             style={{ fontFamily: '"Varela Round"' }}
           >
             🏆 שיאים
           </button>
           <button
             onClick={() => שנהמסך('הוראות')}
-            className="flex-1 py-2.5 rounded-2xl font-bold text-white text-xs bg-white/10 border border-white/15"
+            className="flex-1 py-2 rounded-2xl font-bold text-white text-xs bg-white/10 border border-white/15"
             style={{ fontFamily: '"Varela Round"' }}
           >
             📖 הוראות
           </button>
           <button
             onClick={() => שנהמסך('הגדרות')}
-            className="flex-1 py-2.5 rounded-2xl font-bold text-white text-xs bg-white/10 border border-white/15"
+            className="flex-1 py-2 rounded-2xl font-bold text-white text-xs bg-white/10 border border-white/15"
             style={{ fontFamily: '"Varela Round"' }}
           >
             ⚙️ הגדרות
@@ -320,7 +320,7 @@ export function StartScreen() {
               <div className="text-4xl mb-2">👤</div>
               <h2 className="text-xl font-bold text-white mb-1">פרופיל שחקן</h2>
               <p className="text-white/60 text-xs mb-4">
-                השם שלך יופיע בטבלת השיאים ובאתגרים מול חברים
+                השם שלך יופיע בטבלת השיאים הארצית ובאתגרים מול חברים
               </p>
 
               {/* שדה קלט */}

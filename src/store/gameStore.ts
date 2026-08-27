@@ -16,6 +16,7 @@ import type {
   סקיןמידע,
 } from '../types';
 import { בחרביטויאקראי, פלטרלפיקטגוריה, ביטוייםיומיים } from '../data/phrases';
+import { שלחשיאלענן } from '../data/cloudLeaderboard';
 
 export const רשימתסקינים: סקיןמידע[] = [
   {
@@ -492,9 +493,18 @@ export const useGameStore = create<מצבמשחק & פעולותחנות>((set, 
       set({ סקיניםפתוחים: פתוחיםחדש });
     }
 
+    const רשומה: שיא = {
+      שם: שםשחקן,
+      ניקוד,
+      תאריך: new Date().toLocaleDateString('he-IL'),
+      רמה: הגדרות.רמה,
+      שלב,
+      מצב,
+    };
+
     const רשימהחדשה: שיא[] = [
       ...שיאים,
-      { שם: שםשחקן, ניקוד, תאריך: new Date().toLocaleDateString('he-IL'), רמה: הגדרות.רמה, שלב, מצב },
+      רשומה,
     ]
       .sort((א, ב) => ב.ניקוד - א.ניקוד)
       .slice(0, 10);
@@ -502,6 +512,11 @@ export const useGameStore = create<מצבמשחק & פעולותחנות>((set, 
     localStorage.setItem('שברי-ביטוי-שיא', String(שיאחדש));
     localStorage.setItem('שברי-ביטוי-שיאים', JSON.stringify(רשימהחדשה));
     set({ שיאאישי: שיאחדש, שיאים: רשימהחדשה });
+
+    // שלח שיא אמיתי לענן בזמן אמת!
+    if (ניקוד > 0) {
+      שלחשיאלענן(רשומה);
+    }
   },
 
   אפסמשחק: () => {
