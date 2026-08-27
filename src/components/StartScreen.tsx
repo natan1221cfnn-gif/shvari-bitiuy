@@ -39,7 +39,7 @@ export function StartScreen() {
   const [מראהקטגוריות, setמראהקטגוריות] = useState(false);
   const רמות = ['קל', 'בינוני', 'מטורף'] as const;
 
-  // בדיקת סיבוב יומי חינם
+  // בדיקת סיבוב יומי חינם (20 שעות)
   const שעותשעברו = (Date.now() - גלגלסובבלאחרונה) / (1000 * 60 * 60);
   const סיבובחינם = שעותשעברו >= 20;
 
@@ -70,30 +70,34 @@ export function StartScreen() {
         ))}
       </div>
 
-      {/* ━━ שורת מטבעות, חנות וגלגל המזל העליונה ━━ */}
-      <div className="relative z-10 w-full px-5 pt-safe-top pt-5 pb-1 flex items-center justify-between gap-3">
-        {/* 🛒 חנות ומטבעות */}
+      {/* ━━ שורת מטבעות, חנות וגלגל המזל העליונה (גדולה, ברורה ומרווחת) ━━ */}
+      <div className="relative z-10 w-full px-5 pt-safe-top pt-6 pb-2 grid grid-cols-2 gap-3.5">
+        {/* 🛒 כפתור חנות ומטבעות */}
         <button
           onClick={() => שנהמסך('חנות')}
-          className="flex items-center gap-2 bg-gradient-to-r from-yellow-500/25 to-amber-500/15 border border-yellow-400/50 py-2.5 px-4 rounded-2xl text-yellow-300 font-bold text-sm shadow-md active:scale-95 transition-transform"
+          className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-yellow-500/25 to-amber-500/15 border-2 border-yellow-400/60 flex items-center justify-between text-yellow-300 font-bold text-base shadow-lg active:scale-95 transition-transform"
           style={{ fontFamily: '"Varela Round"' }}
         >
-          <span className="text-lg">🪙</span>
-          <span className="text-base text-yellow-200">{מטבעות}</span>
-          <span className="text-white/80 mr-0.5 font-bold text-xs bg-white/10 px-2 py-0.5 rounded-lg border border-white/10">🛒 חנות</span>
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🪙</span>
+            <span className="text-lg text-yellow-200">{מטבעות}</span>
+          </div>
+          <span className="text-xs bg-yellow-400 text-purple-950 font-bold px-2.5 py-1 rounded-xl shadow">
+            חנות 🛒
+          </span>
         </button>
 
-        {/* 🎡 גלגל המזל */}
+        {/* 🎡 כפתור גלגל המזל */}
         <button
           onClick={() => שנהמסך('גלגל')}
-          className="relative flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 border border-purple-300/40 py-2.5 px-4 rounded-2xl text-white font-bold text-sm shadow-lg active:scale-95 transition-transform"
+          className="relative w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 border-2 border-purple-300/60 flex items-center justify-center gap-2 text-white font-bold text-base shadow-xl active:scale-95 transition-transform"
           style={{ fontFamily: '"Varela Round"' }}
         >
-          <span className="text-lg">🎡</span>
+          <span className="text-2xl">🎡</span>
           <span>גלגל המזל</span>
           {סיבובחינם && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-[11px] text-white px-2 py-0.5 rounded-full font-bold animate-bounce shadow-md border border-white/30">
-              חינם!
+            <span className="absolute -top-2.5 -right-1.5 bg-red-500 text-xs text-white px-2 py-0.5 rounded-full font-bold animate-bounce shadow-lg border border-white/40">
+              חינם! 🎁
             </span>
           )}
         </button>

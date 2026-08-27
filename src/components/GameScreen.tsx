@@ -49,7 +49,6 @@ export function GameScreen() {
     נגןקומבו,
     נגןכישלון,
     נגןכמעט,
-    נגןמוקדם,
     נגןרמהחדשה,
     נגןתקתוק,
     הפעלמוזיקה,
@@ -62,6 +61,7 @@ export function GameScreen() {
   const [הודעה, setהודעה] = useState('');
   const [ניקודקפיצה, setניקודקפיצה] = useState(false);
   const [סטטוסבלוק, setSטטוסבלוק] = useState<'זזע' | 'הצלחה' | 'כישלון' | 'כמעט' | 'ממתין'>('ממתין');
+  const [באזורפגיעהויזואלי, setבאזורפגיעהויזואלי] = useState(false);
 
   // 💥 הרעדת מסך ואפקטי מחץ
   const [screenShake, setScreenShake] = useState(false);
@@ -73,11 +73,9 @@ export function GameScreen() {
 
   const animRef = useRef<number>(0);
   const התחלהRef = useRef<number>(0);
-  const באזורPRef = useRef(false);
-  const כמעטPRef = useRef(false);
+  const roundActiveRef = useRef(false);
+  const tappedRoundRef = useRef(false);
 
-  const חלוןפגיעה = הגדרות.רמה === 'קל' ? 0.16 : הגדרות.רמה === 'בינוני' ? 0.10 : 0.06;
-  const חלוןכמעט = חלוןפגיעה * 2.2;
   const הואטירוף = מצבמשחק === 'טירוף';
 
   // ⏱️ שעון עצר למצב טירוף
@@ -118,46 +116,87 @@ export function GameScreen() {
     return () => עצורמוזיקה();
   }, []); // eslint-disable-line
 
+  const triggerJuice = useCallback((type: 'success' | 'almost' | 'miss') => {
+    setScreenShake(true);
+    setTimeout(() => setScreenShake(false), 240);
+
+    if (type === 'success') {
+      setScreenFlash('green');
+      setRings((prev) => [...prev, Date.now()]);
+      setTimeout(() => setScreenFlash(null), 250);
+    } else if (type === 'almost') {
+      setScreenFlash('yellow');
+      setTimeout(() => setScreenFlash(null), 200);
+    } else {
+      setScreenFlash('red');
+      setTimeout(() => setScreenFlash(null), 250);
+    }
+  }, []);
+
+  const handleAutoPass = useCallback(() => {
+    if (tappedRoundRef.current || !roundActiveRef.current) return;
+    tappedRoundRef.current = true;
+    roundActiveRef.current = false;
+    cancelAnimationFrame(animRef.current);
+
+    const currPhrase = useGameStore.getState().ביטוינוכחי;
+    const currSpecial = useGameStore.getState().בלוקמיוחדנוכחי;
+
+    if (currSpecial === 'פצצה') {
+      setSטטוסבלוק('הצלחה');
+      setהודעה('כל הכבוד! נמנעת מהפצצה! 💣✅');
+      נגןהצלחה();
+      triggerJuice('success');
+      if (currPhrase) טפלבפספוס(currPhrase);
+      return;
+    }
+
+    setSטטוסבלוק('כישלון');
+    setהודעה('מאוחר מדי! ⏱️');
+    נגןכישלון();
+    רטטכישלון();
+    triggerJuice('miss');
+    if (currPhrase) טפלבפספוס(currPhrase);
+  }, [נגןכישלון, נגןהצלחה, רטטכישלון, triggerJuice, טפלבפספוס]);
+
   const startMove = useCallback(() => {
     setעמדה(1);
     setSטטוסבלוק('זזע');
-    באזורPRef.current = false;
-    כמעטPRef.current = false;
+    setבאזורפגיעהויזואלי(false);
+    tappedRoundRef.current = false;
+    roundActiveRef.current = true;
     התחלהRef.current = performance.now();
 
     const animate = (עכשיו: number) => {
+      if (!roundActiveRef.current) return;
+
       const חלף = עכשיו - התחלהRef.current;
-      const התקדמות = Math.min(חלף / מהירות, 1);
-      const עמדהחדשה = 1 - התקדמות;
+      const התקדמות = חלף / מהירות;
+      const עמדהחדשה = Math.max(0, 1 - Math.min(התקדמות, 1));
       setעמדה(עמדהחדשה);
 
-      if (עמדהחדשה <= חלוןכמעט && !כמעטPRef.current) {
-        כמעטPRef.current = true;
+      // חלון פגיעה מרווח והוגן (התקדמות בין 70% ל-105%)
+      if (התקדמות >= 0.70 && התקדמות <= 1.05) {
+        setבאזורפגיעהויזואלי(true);
         עדכןמגנטי('מתוח');
+      } else {
+        setבאזורפגיעהויזואלי(false);
       }
 
-      if (עמדהחדשה <= חלוןפגיעה && !באזורPRef.current) {
-        באזורPRef.current = true;
-        עדכןסטטוס('תפוס');
-      }
-
-      if (התקדמות < 1) {
+      if (התקדמות < 1.08) {
         animRef.current = requestAnimationFrame(animate);
       } else {
-        const מצבנוכחי = useGameStore.getState().סטטוס;
-        if (מצבנוכחי !== 'הצלחה' && מצבנוכחי !== 'כישלון' && מצבנוכחי !== 'מושהה') {
-          handleMiss('מאוחר');
-        }
+        handleAutoPass();
       }
     };
 
     animRef.current = requestAnimationFrame(animate);
-  }, [מהירות, חלוןפגיעה, חלוןכמעט, עדכןסטטוס, עדכןמגנטי]);
+  }, [מהירות, עדכןמגנטי, handleAutoPass]);
 
   useEffect(() => {
     if (סטטוס === 'מתחיל' && ביטוינוכחי) {
       setSטטוסבלוק('ממתין');
-      const t = setTimeout(() => startMove(), 350);
+      const t = setTimeout(() => startMove(), 320);
       return () => clearTimeout(t);
     }
     if (סטטוס === 'הצלחה') {
@@ -194,62 +233,30 @@ export function GameScreen() {
     return () => cancelAnimationFrame(animRef.current);
   }, []);
 
-  const triggerJuice = useCallback((type: 'success' | 'almost' | 'miss') => {
-    setScreenShake(true);
-    setTimeout(() => setScreenShake(false), 260);
-
-    if (type === 'success') {
-      setScreenFlash('green');
-      setRings((prev) => [...prev, Date.now()]);
-      setTimeout(() => setScreenFlash(null), 250);
-    } else if (type === 'almost') {
-      setScreenFlash('yellow');
-      setTimeout(() => setScreenFlash(null), 200);
-    } else {
-      setScreenFlash('red');
-      setTimeout(() => setScreenFlash(null), 250);
-    }
-  }, []);
-
-  const handleMiss = useCallback((סיבה: 'מוקדם' | 'מאוחר' = 'מאוחר') => {
-    cancelAnimationFrame(animRef.current);
-    const currPhrase = useGameStore.getState().ביטוינוכחי;
-    const currSpecial = useGameStore.getState().בלוקמיוחדנוכחי;
-
-    if (currSpecial === 'פצצה') {
-      setSטטוסבלוק('הצלחה');
-      setהודעה('כל הכבוד! נמנעת מהפצצה! 💣✅');
-      נגןהצלחה();
-      triggerJuice('success');
-      if (currPhrase) טפלבפספוס(currPhrase);
-      return;
+  // 🎯 מנגנון פגיעה פיזיקלי מדויק בזמן אמת (Real-Time Physics Hit Detection)
+  const handleTap = useCallback((e?: React.SyntheticEvent) => {
+    if (e) {
+      e.stopPropagation();
     }
 
-    if (סיבה === 'מוקדם' && כמעטPRef.current) {
-      setSטטוסבלוק('כמעט');
-      setהודעה('כמעט! 🤏 קרוב מאוד!');
-      נגןכמעט();
-      רטטקל();
-      triggerJuice('almost');
-      טפלבכמעט();
-    } else {
-      setSטטוסבלוק('כישלון');
-      setהודעה(סיבה === 'מוקדם' ? 'מוקדם מדי! ⏳' : 'מאוחר מדי! ⏱️');
-      נגןכישלון();
-      רטטכישלון();
-      triggerJuice('miss');
-      if (currPhrase) טפלבפספוס(currPhrase);
-    }
-  }, [נגןכמעט, נגןכישלון, נגןהצלחה, רטטקל, רטטכישלון, triggerJuice, טפלבכמעט, טפלבפספוס]);
-
-  const handleTap = useCallback(() => {
     const מצבנוכחי = useGameStore.getState().סטטוס;
-    if (מצבנוכחי === 'מושהה') return;
+    if (מצבנוכחי === 'מושהה' || מצבנוכחי === 'סיום' || מצבנוכחי === 'הצלחה') return;
+    if (!roundActiveRef.current || tappedRoundRef.current) return;
+
+    // נעילת הקשה לסבב הנוכחי
+    tappedRoundRef.current = true;
+    roundActiveRef.current = false;
+    cancelAnimationFrame(animRef.current);
+
+    const עכשיו = performance.now();
+    const חלף = עכשיו - התחלהRef.current;
+    const התקדמות = חלף / מהירות; // מחושב במדויק במילישניות
 
     const currSpecial = useGameStore.getState().בלוקמיוחדנוכחי;
+    const currPhrase = useGameStore.getState().ביטוינוכחי;
 
+    // 💣 אם זו פצצה ולחצו עליה -> פיצוץ!
     if (currSpecial === 'פצצה') {
-      cancelAnimationFrame(animRef.current);
       setSטטוסבלוק('כישלון');
       setהודעה('בום! 💣 לחצת על הפצצה!');
       נגןכישלון();
@@ -259,15 +266,14 @@ export function GameScreen() {
       return;
     }
 
-    if (מצבנוכחי === 'תפוס') {
-      cancelAnimationFrame(animRef.current);
+    // 🎯 1. חלון פגיעה מושלם ומרווח (בין 70% ל-108% מהמסלול)
+    if (התקדמות >= 0.70 && התקדמות <= 1.08) {
       const { מכפיל: מכפילחדש, מטבעותנוספו } = טפלבהצלחה();
       setSטטוסבלוק('הצלחה');
 
       setCoinsPop(מטבעותנוספו);
       setTimeout(() => setCoinsPop(null), 1000);
 
-      const currPhrase = useGameStore.getState().ביטוינוכחי;
       if (currPhrase) {
         setFloatingText({
           id: Date.now(),
@@ -295,13 +301,30 @@ export function GameScreen() {
       רטטהצלחה();
       if (מכפילחדש > 1) רטטקומבו(מכפילחדש);
       triggerJuice('success');
-    } else if (מצבנוכחי === 'מתחיל' || מצבנוכחי === 'ממתין') {
-      handleMiss('מוקדם');
+      return;
     }
-  }, [טפלבהצלחה, טפלבפצצה, נגןהצלחה, נגןקומבו, נגןכישלון, רטטהצלחה, רטטקומבו, רטטכישלון, triggerJuice, handleMiss, הואטירוף]);
+
+    // 🤏 2. קרוב מאוד ("כמעט!") - ללא איבוד לב! (בין 52% ל-70%)
+    if (התקדמות >= 0.52 && התקדמות < 0.70) {
+      setSטטוסבלוק('כמעט');
+      setהודעה('כמעט! 🤏 קרוב מאוד!');
+      נגןכמעט();
+      רטטקל();
+      triggerJuice('almost');
+      טפלבכמעט();
+      return;
+    }
+
+    // ⏳ 3. מוקדם מדי (מתחת ל-52%)
+    setSטטוסבלוק('כישלון');
+    setהודעה('מוקדם מדי! ⏳');
+    נגןכישלון();
+    רטטכישלון();
+    triggerJuice('miss');
+    if (currPhrase) טפלבפספוס(currPhrase);
+  }, [מהירות, טפלבהצלחה, טפלבפצצה, טפלבכמעט, טפלבפספוס, נגןהצלחה, נגןקומבו, נגןכישלון, נגןכמעט, רטטהצלחה, רטטקומבו, רטטכישלון, רטטקל, triggerJuice, הואטירוף]);
 
   const לבבותמערך = Array.from({ length: 3 }, (_, i) => i < לבבות);
-  const באזורפגיעה = סטטוס === 'תפוס';
 
   return (
     <motion.div
@@ -314,13 +337,13 @@ export function GameScreen() {
           : {}
       }
       transition={{ duration: 0.25 }}
-      className="fixed inset-0 flex flex-col select-none overflow-hidden transition-all duration-700 justify-between"
+      className="fixed inset-0 flex flex-col select-none overflow-hidden transition-all duration-700 justify-between cursor-pointer"
       style={{
         background: getBackgroundGradient(),
-        touchAction: 'none',
+        touchAction: 'manipulation',
         direction: 'rtl',
       }}
-      onPointerDown={handleTap}
+      onPointerDown={(e) => handleTap(e)}
     >
       {/* Flash FX */}
       {screenFlash && (
@@ -388,7 +411,7 @@ export function GameScreen() {
         </div>
       </div>
 
-      {/* ━━━━ 2. ניקוד ומשוב (מופרד לחלוטין מבועת הדיבור של הדמות!) ━━━━ */}
+      {/* ━━━━ 2. ניקוד ומשוב ━━━━ */}
       <div className="relative z-10 flex flex-col items-center py-1">
         <motion.div
           animate={ניקודקפיצה ? { scale: [1, 1.25, 1] } : {}}
@@ -432,7 +455,7 @@ export function GameScreen() {
           )}
         </AnimatePresence>
 
-        {/* 🎯 הודעת תגובה ממוקמת כאן למעלה - לא חופפת לדמות! */}
+        {/* 🎯 הודעת תגובה */}
         <div className="h-8 flex items-center justify-center mt-1">
           <AnimatePresence>
             {הודעה && (
@@ -521,14 +544,14 @@ export function GameScreen() {
           <motion.div
             className="absolute w-0.5 h-20 rounded-full pointer-events-none"
             animate={{
-              background: באזורפגיעה
+              background: באזורפגיעהויזואלי
                 ? ['rgba(255,220,50,0.9)', 'rgba(255,150,0,0.9)', 'rgba(255,220,50,0.9)']
                 : 'rgba(255,255,255,0.1)',
-              boxShadow: באזורפגיעה
+              boxShadow: באזורפגיעהויזואלי
                 ? ['0 0 20px rgba(255,220,50,0.6)', '0 0 40px rgba(255,150,0,0.8)', '0 0 20px rgba(255,220,50,0.6)']
                 : 'none',
             }}
-            transition={{ duration: 0.35, repeat: באזורפגיעה ? Infinity : 0 }}
+            transition={{ duration: 0.35, repeat: באזורפגיעהויזואלי ? Infinity : 0 }}
           />
 
           {ביטוינוכחי && (
@@ -557,31 +580,31 @@ export function GameScreen() {
         </div>
       </div>
 
-      {/* ━━━━ 4. דמות מגנטי המנחה (מותאמת לסקין) + כפתור הקש מעוצב היטב ━━━━ */}
+      {/* ━━━━ 4. דמות מגנטי המנחה + כפתור הקש מעוצב ━━━━ */}
       <div className="relative z-10 pb-safe-bottom pb-4 px-5 flex flex-col items-center gap-3">
-        {/* 🐣 מגנטי המנחה - מותאם לסקין הפעיל */}
+        {/* 🐣 מגנטי המנחה */}
         <div className="w-full flex justify-center">
           <MascotMagneti מצב={מגנטימצב} סקין={סקיןפעיל} קומבו={מכפיל} />
         </div>
 
-        {/* 🔘 כפתור הקש עכשיו - מסודר, מרווח ולא מעוך! */}
+        {/* 🔘 כפתור הקש עכשיו */}
         <motion.div
           className="w-full min-h-[52px] h-14 rounded-2xl flex items-center justify-center text-base font-bold pointer-events-none shadow-xl border border-white/10"
           animate={{
             background: בלוקמיוחדנוכחי === 'פצצה'
               ? 'linear-gradient(135deg, #e52d27, #b31217)'
-              : באזורפגיעה
+              : באזורפגיעהויזואלי
               ? ['linear-gradient(135deg, #f7971e, #ffd200)', 'linear-gradient(135deg, #ffd200, #f7971e)']
               : 'rgba(255,255,255,0.08)',
-            scale: באזורפגיעה ? [1, 1.02, 1] : 1,
+            scale: באזורפגיעהויזואלי ? [1, 1.02, 1] : 1,
           }}
-          transition={{ duration: 0.3, repeat: באזורפגיעה ? Infinity : 0 }}
+          transition={{ duration: 0.3, repeat: באזורפגיעהויזואלי ? Infinity : 0 }}
           style={{ fontFamily: '"Varela Round"' }}
         >
           <span className="text-white" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
             {בלוקמיוחדנוכחי === 'פצצה'
               ? '⚠️ פצצה! אל תקיש!'
-              : באזורפגיעה
+              : באזורפגיעהויזואלי
               ? '⚡ הקש עכשיו!'
               : סטטוסבלוק === 'הצלחה'
               ? '✅ כל הכבוד!'
