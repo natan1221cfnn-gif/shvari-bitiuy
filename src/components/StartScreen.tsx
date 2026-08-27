@@ -70,25 +70,29 @@ export function StartScreen() {
         ))}
       </div>
 
-      {/* ━━ שורת מטבעות וחנות עליונה ━━ */}
-      <div className="relative z-10 w-full px-5 pt-safe-top pt-3 flex items-center justify-between">
+      {/* ━━ שורת מטבעות, חנות וגלגל המזל העליונה ━━ */}
+      <div className="relative z-10 w-full px-5 pt-safe-top pt-5 pb-1 flex items-center justify-between gap-3">
+        {/* 🛒 חנות ומטבעות */}
         <button
           onClick={() => שנהמסך('חנות')}
-          className="flex items-center gap-1.5 bg-yellow-500/20 border border-yellow-400/40 px-3 py-1 rounded-full text-yellow-300 font-bold text-xs active:scale-95 transition-transform"
+          className="flex items-center gap-2 bg-gradient-to-r from-yellow-500/25 to-amber-500/15 border border-yellow-400/50 py-2.5 px-4 rounded-2xl text-yellow-300 font-bold text-sm shadow-md active:scale-95 transition-transform"
+          style={{ fontFamily: '"Varela Round"' }}
         >
-          <span>🪙</span>
-          <span>{מטבעות}</span>
-          <span className="text-white/60 mr-1">🛒 חנות</span>
+          <span className="text-lg">🪙</span>
+          <span className="text-base text-yellow-200">{מטבעות}</span>
+          <span className="text-white/80 mr-0.5 font-bold text-xs bg-white/10 px-2 py-0.5 rounded-lg border border-white/10">🛒 חנות</span>
         </button>
 
-        {/* 🎡 כפתור גלגל המזל עם תגית מתנה */}
+        {/* 🎡 גלגל המזל */}
         <button
           onClick={() => שנהמסך('גלגל')}
-          className="relative flex items-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 border border-purple-300/40 px-3 py-1 rounded-full text-white font-bold text-xs active:scale-95 transition-transform shadow-lg"
+          className="relative flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 border border-purple-300/40 py-2.5 px-4 rounded-2xl text-white font-bold text-sm shadow-lg active:scale-95 transition-transform"
+          style={{ fontFamily: '"Varela Round"' }}
         >
-          <span>🎡 גלגל המזל</span>
+          <span className="text-lg">🎡</span>
+          <span>גלגל המזל</span>
           {סיבובחינם && (
-            <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-[10px] text-white px-1.5 py-0.2 rounded-full font-bold animate-bounce shadow">
+            <span className="absolute -top-2 -right-2 bg-red-500 text-[11px] text-white px-2 py-0.5 rounded-full font-bold animate-bounce shadow-md border border-white/30">
               חינם!
             </span>
           )}
