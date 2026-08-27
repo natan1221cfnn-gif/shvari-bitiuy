@@ -99,32 +99,32 @@ export function StartScreen() {
       </div>
 
       {/* ━━ 1. שורת חנות וגלגל המזל העליונה (גדולה, רחבה ומרווחת) ━━ */}
-      <div className="relative z-10 w-full px-5 pt-safe-top pt-5 pb-1 grid grid-cols-2 gap-3.5">
-        {/* 🛒 חנות ומטבעות */}
+      <div className="relative z-10 w-full px-4 pt-safe-top pt-6 pb-2 grid grid-cols-2 gap-3">
+        {/* 🛒 כפתור חנות ומטבעות */}
         <button
           onClick={() => שנהמסך('חנות')}
-          className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-yellow-500/25 to-amber-500/15 border-2 border-yellow-400/60 flex items-center justify-between text-yellow-300 font-bold text-base shadow-lg active:scale-95 transition-transform"
+          className="w-full h-15 min-h-[58px] py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-600/30 to-yellow-500/20 border-2 border-yellow-400/80 flex items-center justify-between text-yellow-300 font-bold text-base shadow-xl active:scale-95 transition-all"
           style={{ fontFamily: '"Varela Round"' }}
         >
           <div className="flex items-center gap-2">
             <span className="text-2xl">🪙</span>
-            <span className="text-lg text-yellow-200">{מטבעות}</span>
+            <span className="text-xl text-yellow-200 font-black">{מטבעות}</span>
           </div>
-          <span className="text-xs bg-yellow-400 text-purple-950 font-bold px-2.5 py-1 rounded-xl shadow">
+          <span className="text-xs bg-yellow-400 text-purple-950 font-black px-2.5 py-1 rounded-xl shadow">
             חנות 🛒
           </span>
         </button>
 
-        {/* 🎡 גלגל המזל */}
+        {/* 🎡 כפתור גלגל המזל */}
         <button
           onClick={() => שנהמסך('גלגל')}
-          className="relative w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 border-2 border-purple-300/60 flex items-center justify-center gap-2 text-white font-bold text-base shadow-xl active:scale-95 transition-transform"
+          className="relative w-full h-15 min-h-[58px] py-3 px-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 border-2 border-purple-300/80 flex items-center justify-center gap-2 text-white font-black text-base shadow-xl active:scale-95 transition-all"
           style={{ fontFamily: '"Varela Round"' }}
         >
           <span className="text-2xl">🎡</span>
-          <span>גלגל המזל</span>
+          <span className="text-base">גלגל המזל</span>
           {סיבובחינם && (
-            <span className="absolute -top-2.5 -right-1.5 bg-red-500 text-xs text-white px-2 py-0.5 rounded-full font-bold animate-bounce shadow-lg border border-white/40">
+            <span className="absolute -top-2.5 -right-1 bg-red-500 text-xs text-white px-2 py-0.5 rounded-full font-black animate-bounce shadow-lg border border-white/50">
               חינם! 🎁
             </span>
           )}
