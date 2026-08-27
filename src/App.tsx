@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGameStore } from './store/gameStore';
+import { שלחשיאלענן } from './data/cloudLeaderboard';
 import { StartScreen } from './components/StartScreen';
 import { GameScreen } from './components/GameScreen';
 import { LoseScreen } from './components/LoseScreen';
@@ -17,7 +19,22 @@ const מעברדף = {
 };
 
 export function App() {
-  const { מסךפעיל } = useGameStore();
+  const { מסךפעיל, שיאאישי, שיאים, שםשחקן, הגדרות } = useGameStore();
+
+  // סנכרון אוטומטי של השיא המקומי הגבוה ביותר לענן
+  useEffect(() => {
+    if (שיאאישי > 0) {
+      const השיאהטובביותר = שיאים[0] || {
+        שם: שםשחקן,
+        ניקוד: שיאאישי,
+        תאריך: new Date().toLocaleDateString('he-IL'),
+        רמה: הגדרות.רמה,
+        שלב: 1,
+        מצב: 'רגיל' as const,
+      };
+      שלחשיאלענן(השיאהטובביותר);
+    }
+  }, [שיאאישי, שיאים, שםשחקן, הגדרות.רמה]);
 
   return (
     <div style={{ direction: 'rtl', fontFamily: '"Varela Round", sans-serif' }}>

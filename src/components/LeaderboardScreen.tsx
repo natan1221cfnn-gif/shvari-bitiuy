@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
-import { טעןשיאיםמהענן } from '../data/cloudLeaderboard';
+import { טעןשיאיםמהענן, שלחשיאלענן } from '../data/cloudLeaderboard';
 import type { שיא } from '../types';
 
 const מדליות = ['🥇', '🥈', '🥉'];
 
 export function LeaderboardScreen() {
-  const { שיאים, שנהמסך, שםשחקן } = useGameStore();
+  const { שיאים, שנהמסך, שםשחקן, שיאאישי, הגדרות } = useGameStore();
   const [טאב, setטאב] = useState<'אישי' | 'ארצי'>('ארצי');
   const [שיאיםענן, setשיאיםענן] = useState<שיא[]>([]);
   const [טוען, setטוען] = useState(true);
@@ -16,14 +16,36 @@ export function LeaderboardScreen() {
     let unmounted = false;
     טעןשיאיםמהענן().then((נתונים) => {
       if (!unmounted) {
-        setשיאיםענן(נתונים);
+        let רשימהמשולבת = [...נתונים];
+
+        // אם יש לשחקן שיא אישי שלא מופיע ברשימת הענן, הוסף וסנכרן אותו מיד!
+        if (שיאאישי > 0) {
+          const השיאהכיטוב: שיא = שיאים[0] || {
+            שם: שםשחקן,
+            ניקוד: שיאאישי,
+            תאריך: new Date().toLocaleDateString('he-IL'),
+            רמה: הגדרות.רמה,
+            שלב: 1,
+            מצב: 'רגיל' as const,
+          };
+
+          const קיים = רשימהמשולבת.some((ש) => ש.שם === שםשחקן && ש.ניקוד >= שיאאישי);
+          if (!קיים) {
+            רשימהמשולבת = [...רשימהמשולבת.filter((ש) => ש.שם !== שםשחקן), השיאהכיטוב]
+              .sort((a, b) => (b.ניקוד || 0) - (a.ניקוד || 0))
+              .slice(0, 50);
+            שלחשיאלענן(השיאהכיטוב);
+          }
+        }
+
+        setשיאיםענן(רשימהמשולבת);
         setטוען(false);
       }
     });
     return () => {
       unmounted = true;
     };
-  }, []);
+  }, [שיאאישי, שיאים, שםשחקן, הגדרות.רמה]);
 
   return (
     <div
