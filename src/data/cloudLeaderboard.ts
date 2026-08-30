@@ -16,6 +16,33 @@ function קבלמזההמכשיר(): string {
   }
 }
 
+// 🛡️ פונקציית סינון ומניעת כפילויות קשיחה (כל שחקן מופיע פעם אחת בלבד בשיא הגבוה ביותר שלו!)
+export function סנןונקהכפילויות(רשימה: שיא[]): שיא[] {
+  const מפה = new Map<string, שיא>();
+
+  for (const ש of רשימה) {
+    if (!ש || !ש.ניקוד || ש.ניקוד <= 0) continue;
+    
+    // ניקוי ואיחוד שמות ישנים
+    let שםנקי = (ש.שם || 'שחקן').trim();
+    if (שםנקי.includes('8819') || שםנקי === 'שחקן#8819') {
+      שםנקי = 'בננה';
+    }
+
+    const שיאמתוקן: שיא = { ...ש, שם: שםנקי };
+    const קיים = מפה.get(שםנקי);
+
+    // אם השחקן לא קיים עדיין, או שהניקוד הנוכחי גבוה יותר מהקיים - שמור אותו
+    if (!קיים || שיאמתוקן.ניקוד > קיים.ניקוד) {
+      מפה.set(שםנקי, שיאמתוקן);
+    }
+  }
+
+  return Array.from(מפה.values())
+    .sort((a, b) => (b.ניקוד || 0) - (a.ניקוד || 0))
+    .slice(0, 50);
+}
+
 export async function טעןשיאיםמהענן(): Promise<שיא[]> {
   try {
     const res = await fetch(CLOUD_ENDPOINT, { cache: 'no-store' });
@@ -23,7 +50,7 @@ export async function טעןשיאיםמהענן(): Promise<שיא[]> {
     const json = await res.json();
     const scores = json?.data?.scores;
     if (Array.isArray(scores)) {
-      return scores.sort((a: שיא, b: שיא) => (b.ניקוד || 0) - (a.ניקוד || 0)).slice(0, 50);
+      return סנןונקהכפילויות(scores);
     }
     return [];
   } catch {
@@ -36,14 +63,8 @@ export async function שלחשיאלענן(שיאחדש: שיא): Promise<void> 
     if (!שיאחדש.ניקוד || שיאחדש.ניקוד <= 0) return;
     const קיימים = await טעןשיאיםמהענן();
 
-    const קיים = קיימים.some(
-      (s) => s.שם === שיאחדש.שם && s.ניקוד === שיאחדש.ניקוד && s.תאריך === שיאחדש.תאריך
-    );
-    if (קיים) return;
-
-    const מעודכן = [...קיימים, שיאחדש]
-      .sort((a, b) => (b.ניקוד || 0) - (a.ניקוד || 0))
-      .slice(0, 50);
+    // הוספה וסינון כפילויות קשיח
+    const מעודכן = סנןונקהכפילויות([...קיימים, שיאחדש]);
 
     await fetch(CLOUD_ENDPOINT, {
       method: 'PUT',
@@ -63,26 +84,24 @@ export async function עדכןשםשחקןבענן(שםישן: string, שםחד�
   try {
     if (!שםחדש || שםישן === שםחדש) return;
     const קיימים = await טעןשיאיםמהענן();
-    let עודכן = false;
 
     const מעודכן = קיימים.map((s) => {
-      if (s.שם === שםישן) {
-        עודכן = true;
+      if (s.שם === שםישן || (שםישן.includes('8819') && s.שם === 'שחקן#8819')) {
         return { ...s, שם: שםחדש };
       }
       return s;
     });
 
-    if (עודכן) {
-      await fetch(CLOUD_ENDPOINT, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: 'shvari_real_scores_production_v1',
-          data: { scores: מעודכן },
-        }),
-      });
-    }
+    const נקי = סנןונקהכפילויות(מעודכן);
+
+    await fetch(CLOUD_ENDPOINT, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'shvari_real_scores_production_v1',
+        data: { scores: נקי },
+      }),
+    });
   } catch {
     /* ignore */
   }
