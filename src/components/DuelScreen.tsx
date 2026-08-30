@@ -1,82 +1,213 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Peer, type DataConnection } from 'peerjs';
 import { useGameStore } from '../store/gameStore';
 import { useSound } from '../hooks/useSound';
 import { useHaptic } from '../hooks/useHaptic';
 import { כלהביטויים } from '../data/phrases';
-import {
-  createDuelRoom,
-  joinDuelRoom,
-  getDuelRoom,
-  updateDuelPlayer,
-  restartDuelRoom,
-  shareLinkGeneric,
-  type DuelRoom,
-} from '../data/duelCloud';
 import type { ביטוי } from '../types';
 
 export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null }) {
-  const { שםשחקן, שנהמסך, סקיןפעיל } = useGameStore();
+  const { שםשחקן, שנהמסך } = useGameStore();
   const { נגןהצלחה, נגןכישלון, נגןרמהחדשה, נגןקומבו, נגןתקתוק } = useSound();
   const { רטטהצלחה, רטטכישלון, רטטקומבו } = useHaptic();
 
-  const [חדר, setחדר] = useState<DuelRoom | null>(null);
-  const [תפקיד, setתפקיד] = useState<'host' | 'guest'>('host');
+  // מצבי חדר
+  const [מצבמסך, setמצבמסך] = useState<'lobby' | 'creating' | 'waiting' | 'joining' | 'countdown' | 'playing' | 'ended'>('lobby');
+  const [קודחדר, setקודחדר] = useState('');
   const [קודקלט, setקודקלט] = useState('');
-  const [הודעתשיתוף, setהודעתשיתוף] = useState<string | null>(null);
-  const [טוען, setטוען] = useState(false);
+  const [שםיריב, setשםיריב] = useState('');
+  const [תפקיד, setתפקיד] = useState<'host' | 'guest'>('host');
+  const [הודעתשגיאה, setהודעתשגיאה] = useState<string | null>(null);
   const [ספירהלאחור, setספירהלאחור] = useState<number | null>(null);
+  const [מנצח, setמנצח] = useState<string | null>(null);
 
-  // משתני המשחק של השחקן המקומי
+  // משתני המשחק
+  const [ביטוייקרב, setביטוייקרב] = useState<ביטוי[]>([]);
   const [אינדקסנוכחי, setאינדקסנוכחי] = useState(0);
-  const [ניקודמקומי, setניקודמקומי] = useState(0);
-  const [פגיעותמקומיות, setפגיעותמקומיות] = useState(0);
-  const [סטטוססבב, setסטטוססבב] = useState<'ממתין' | 'רץ' | 'הצלחה' | 'פספוס'>('ממתין');
+  const [פגיעותשלי, setפגיעותשלי] = useState(0);
+  const [ניקודשלי, setניקודשלי] = useState(0);
+  const [פגיעותיריב, setפגיעותיריב] = useState(0);
   const [התקדמות, setהתקדמות] = useState(0);
+  const [סטטוססבב, setסטטוססבב] = useState<'רץ' | 'הצלחה' | 'פספוס'>('רץ');
 
-  const התחלהRef = useRef(0);
+  const peerRef = useRef<Peer | null>(null);
+  const connRef = useRef<DataConnection | null>(null);
   const animRef = useRef(0);
+  const התחלהRef = useRef(0);
   const roundActiveRef = useRef(false);
   const tappedRef = useRef(false);
 
-  // רשימת הביטויים לקרב
-  const ביטוייקרב: ביטוי[] = (חדר?.phrasesIndices || []).map((idx) => כלהביטויים[idx % כלהביטויים.length]);
   const ביטוינוכחי = ביטוייקרב[אינדקסנוכחי] || כלהביטויים[0];
 
   // 1. חיבור אוטומטי אם יש room ב-URL
   useEffect(() => {
     if (initialRoomId) {
-      setטוען(true);
-      joinDuelRoom(initialRoomId, שםשחקן).then((joined) => {
-        setטוען(false);
-        if (joined) {
-          setחדר(joined);
-          setתפקיד('guest');
-        }
-      });
+      הצטרףלחדר(initialRoomId);
     }
-  }, [initialRoomId, שםשחקן]);
+  }, [initialRoomId]); // eslint-disable-line
 
-  // 2. פולינג רציף לסנכרון החדר
+  // ניקוי בעת יציאה
   useEffect(() => {
-    if (!חדר) return;
-    const interval = setInterval(() => {
-      getDuelRoom(חדר.id).then((updated) => {
-        if (updated) {
-          setחדר(updated);
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      connRef.current?.close();
+      peerRef.current?.destroy();
+    };
+  }, []);
 
-          // התחלת ספירה לאחור כשהיריב הצטרף
-          if (updated.status === 'countdown' && ספירהלאחור === null) {
-            setספירהלאחור(3);
+  // 2. יצירת חדר קרב חדש (Host)
+  const צורחדר = () => {
+    setמצבמסך('creating');
+    setהודעתשגיאה(null);
+
+    const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
+    const peerId = `shvari_${randomCode}`;
+
+    try {
+      peerRef.current?.destroy();
+      const peer = new Peer(peerId, { debug: 0 });
+      peerRef.current = peer;
+
+      peer.on('open', () => {
+        setקודחדר(randomCode);
+        setתפקיד('host');
+        setמצבמסך('waiting');
+      });
+
+      peer.on('connection', (conn) => {
+        connRef.current = conn;
+
+        conn.on('open', () => {
+          // יצירת ביטויים אקראיים
+          const indices: number[] = [];
+          while (indices.length < 15) {
+            const r = Math.floor(Math.random() * כלהביטויים.length);
+            if (!indices.includes(r)) indices.push(r);
           }
+
+          // שליחת פתיחת משחק לאורח
+          conn.send({
+            type: 'START_MATCH',
+            hostName: שםשחקן,
+            indices,
+          });
+
+          const phrases = indices.map((i) => כלהביטויים[i % כלהביטויים.length]);
+          setביטוייקרב(phrases);
+          setספירהלאחור(3);
+          setמצבמסך('countdown');
+        });
+
+        conn.on('data', (data: any) => {
+          handleIncomingData(data);
+        });
+
+        conn.on('close', () => {
+          setהודעתשגיאה('היריב התנתק מהקרב');
+          setמצבמסך('lobby');
+        });
+      });
+
+      peer.on('error', (err) => {
+        console.error('Peer error:', err);
+        // אם הקוד תפוס - נסה שוב
+        if (err.type === 'unavailable-id') {
+          צורחדר();
+        } else {
+          setהודעתשגיאה('שגיאה בחיבור לרשת. נסה שוב.');
+          setמצבמסך('lobby');
         }
       });
-    }, 900);
+    } catch {
+      setהודעתשגיאה('שגיאה ביצירת החדר');
+      setמצבמסך('lobby');
+    }
+  };
 
-    return () => clearInterval(interval);
-  }, [חדר, ספירהלאחור]);
+  // 3. הצטרפות לחדר קיים (Guest)
+  const הצטרףלחדר = (codeToJoin?: string) => {
+    const code = (codeToJoin || קודקלט).trim();
+    if (!code) return;
 
-  // 3. ניהול ספירה לאחור (3... 2... 1... צאו לדרך!)
+    setמצבמסך('joining');
+    setהודעתשגיאה(null);
+
+    try {
+      peerRef.current?.destroy();
+      const guestPeer = new Peer({ debug: 0 });
+      peerRef.current = guestPeer;
+
+      guestPeer.on('open', () => {
+        const targetId = `shvari_${code}`;
+        const conn = guestPeer.connect(targetId, { reliable: true });
+        connRef.current = conn;
+
+        conn.on('open', () => {
+          setתפקיד('guest');
+          setקודחדר(code);
+          conn.send({ type: 'GUEST_READY', guestName: שםשחקן });
+        });
+
+        conn.on('data', (data: any) => {
+          handleIncomingData(data);
+        });
+
+        conn.on('close', () => {
+          setהודעתשגיאה('החיבור עם החדר נותק');
+          setמצבמסך('lobby');
+        });
+      });
+
+      guestPeer.on('error', () => {
+        setהודעתשגיאה('❌ חדר לא נמצא או שאינו מחובר כרגע');
+        setמצבמסך('lobby');
+      });
+
+      // Timeout של 8 שניות אם לא מתחבר
+      setTimeout(() => {
+        if (connRef.current && !connRef.current.open) {
+          setהודעתשגיאה('❌ חדר לא נמצא או שפג תוקפו');
+          setמצבמסך('lobby');
+        }
+      }, 8000);
+    } catch {
+      setהודעתשגיאה('שגיאה בהתחברות');
+      setמצבמסך('lobby');
+    }
+  };
+
+  // 4. טיפול בהודעות נכנסות מהיריב
+  const handleIncomingData = (data: any) => {
+    if (!data) return;
+
+    if (data.type === 'START_MATCH') {
+      setשםיריב(data.hostName || 'יריב');
+      const phrases = (data.indices || []).map((i: number) => כלהביטויים[i % כלהביטויים.length]);
+      setביטוייקרב(phrases);
+      setספירהלאחור(3);
+      setמצבמסך('countdown');
+    } else if (data.type === 'GUEST_READY') {
+      setשםיריב(data.guestName || 'יריב');
+    } else if (data.type === 'UPDATE_SCORE') {
+      setפגיעותיריב(data.hits);
+      if (data.hits >= 10 && !מנצח) {
+        setמנצח(שםיריב || 'יריב');
+        setמצבמסך('ended');
+      }
+    } else if (data.type === 'REMATCH') {
+      const phrases = (data.indices || []).map((i: number) => כלהביטויים[i % כלהביטויים.length]);
+      setביטוייקרב(phrases);
+      setפגיעותשלי(0);
+      setניקודשלי(0);
+      setפגיעותיריב(0);
+      setמנצח(null);
+      setספירהלאחור(3);
+      setמצבמסך('countdown');
+    }
+  };
+
+  // 5. ניהול ספירה לאחור (3... 2... 1... צאו לדרך!)
   useEffect(() => {
     if (ספירהלאחור === null) return;
     if (ספירהלאחור > 0) {
@@ -84,18 +215,19 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
       const timer = setTimeout(() => setספירהלאחור(ספירהלאחור - 1), 1000);
       return () => clearTimeout(timer);
     } else {
-      // סיום ספירה לאחור -> התחלת הקרב
       נגןרמהחדשה();
       setספירהלאחור(null);
       setאינדקסנוכחי(0);
-      setניקודמקומי(0);
-      setפגיעותמקומיות(0);
-      setסטטוססבב('רץ');
+      setפגיעותשלי(0);
+      setניקודשלי(0);
+      setפגיעותיריב(0);
+      setמנצח(null);
+      setמצבמסך('playing');
       התחלסבב(0);
     }
-  }, [ספירהלאחור]);
+  }, [ספירהלאחור]); // eslint-disable-line
 
-  // 4. לולאת אנימציה של המגנט שזז לכיוון השחקן (מהירות 2.2 שניות)
+  // 6. תנועת המגנט (2.2 שניות לסבב)
   const מהירותקרב = 2200;
   const התחלסבב = (אינדקס: number) => {
     cancelAnimationFrame(animRef.current);
@@ -113,7 +245,6 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
       setהתקדמות(Math.min(prog, 1.15));
 
       if (prog >= 1.15) {
-        // פספוס - עבר את המגנט
         roundActiveRef.current = false;
         setסטטוססבב('פספוס');
         נגןכישלון();
@@ -127,9 +258,9 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
     animRef.current = requestAnimationFrame(loop);
   };
 
-  // 5. לחיצת שחקן על המגנט
+  // 7. לחיצה על המגנט
   const handleTap = () => {
-    if (!roundActiveRef.current || tappedRef.current || חדר?.status === 'ended') return;
+    if (!roundActiveRef.current || tappedRef.current || מצבמסך !== 'playing') return;
     tappedRef.current = true;
     roundActiveRef.current = false;
     cancelAnimationFrame(animRef.current);
@@ -138,83 +269,76 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
     const elapsed = now - התחלהRef.current;
     const prog = elapsed / מהירותקרב;
 
-    // חלון פגיעה מדויק
     if (prog >= 0.70 && prog <= 1.08) {
-      const פגיעותחדשות = פגיעותמקומיות + 1;
-      const ניקודחדש = ניקודמקומי + 150;
+      const newHits = פגיעותשלי + 1;
+      const newScore = ניקודשלי + 150;
       setסטטוססבב('הצלחה');
-      setפגיעותמקומיות(פגיעותחדשות);
-      setניקודמקומי(ניקודחדש);
+      setפגיעותשלי(newHits);
+      setניקודשלי(newScore);
       נגןהצלחה();
       רטטהצלחה();
 
-      // עדכון ענן
-      if (חדר) {
-        updateDuelPlayer(חדר.id, תפקיד, ניקודחדש, פגיעותחדשות).then((res) => {
-          if (res) setחדר(res);
-        });
-      }
+      // שידור מיידי ליריב
+      connRef.current?.send({
+        type: 'UPDATE_SCORE',
+        hits: newHits,
+        score: newScore,
+      });
 
-      if (פגיעותחדשות >= 10) {
+      if (newHits >= 10) {
         נגןקומבו();
         רטטקומבו(5);
+        setמנצח(שםשחקן);
+        setמצבמסך('ended');
       } else {
-        setTimeout(() => התחלסבב(אינדקסנוכחי + 1), 600);
+        setTimeout(() => התחלסבב((אינדקסנוכחי + 1) % (ביטוייקרב.length || 1)), 600);
       }
     } else {
       setסטטוססבב('פספוס');
       נגןכישלון();
       רטטכישלון();
-      setTimeout(() => התחלסבב(אינדקסנוכחי + 1), 800);
+      setTimeout(() => התחלסבב((אינדקסנוכחי + 1) % (ביטוייקרב.length || 1)), 800);
     }
   };
 
-  // יצירת חדר
-  const צורחדר = async () => {
-    setטוען(true);
-    const newRoom = await createDuelRoom(שםשחקן, כלהביטויים.length);
-    setחדר(newRoom);
-    setתפקיד('host');
-    setטוען(false);
-  };
-
-  // הצטרפות לפי קוד
-  const הצטרףלחדר = async () => {
-    if (!קודקלט.trim()) return;
-    setטוען(true);
-    const joined = await joinDuelRoom(קודקלט.trim(), שםשחקן);
-    setטוען(false);
-    if (joined) {
-      setחדר(joined);
-      setתפקיד('guest');
-    } else {
-      setהודעתשיתוף('❌ חדר לא נמצא או פג תוקפו');
-      setTimeout(() => setהודעתשיתוף(null), 3000);
-    }
-  };
-
-  // שיתוף גנרי חכם (Native Web Share + העתקה)
+  // 8. שיתוף קישור קרב
   const שתףקישור = async () => {
-    if (!חדר) return;
-    const url = `${window.location.origin}${window.location.pathname}?room=${חדר.id}`;
-    const text = `⚔️ ${שםשחקן} מזמין אותך לדו-קרב 1 על 1 בשברי ביטוי! 🧲 קוד חדר: ${חדר.id}\nמי מחבר יותר מהר? כנס עכשיו:`;
-    const res = await shareLinkGeneric('דו-קרב שברי ביטוי ⚔️', text, url);
-    if (res === 'copied') {
-      setהודעתשיתוף('הקישור הועתק ללוח בהצלחה! 📋');
-      setTimeout(() => setהודעתשיתוף(null), 3000);
+    const url = `${window.location.origin}${window.location.pathname}?room=${קודחדר}`;
+    const text = `⚔️ ${שםשחקן} מזמין אותך לדו-קרב 1 על 1 בשברי ביטוי! 🧲\nקוד חדר: ${קודחדר}\nמי מחבר יותר מהר? כנס לקרב:`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'דו-קרב שברי ביטוי ⚔️', text, url });
+        return;
+      } catch { /* cancel */ }
     }
+    try {
+      await navigator.clipboard.writeText(`${text}\n${url}`);
+      setהודעתשגיאה('הקישור הועתק בהצלחה! 📋');
+      setTimeout(() => setהודעתשגיאה(null), 3000);
+    } catch { /* ignore */ }
   };
 
-  // קרב חוזר
-  const קרבחוזר = async () => {
-    if (!חדר) return;
-    setטוען(true);
-    const res = await restartDuelRoom(חדר.id, כלהביטויים.length);
-    setטוען(false);
-    if (res) {
-      setחדר(res);
-      setספירהלאחור(3);
+  // 9. קרב חוזר (נקמה)
+  const קרבחוזר = () => {
+    const indices: number[] = [];
+    while (indices.length < 15) {
+      const r = Math.floor(Math.random() * כלהביטויים.length);
+      if (!indices.includes(r)) indices.push(r);
     }
+
+    connRef.current?.send({
+      type: 'REMATCH',
+      indices,
+    });
+
+    const phrases = indices.map((i) => כלהביטויים[i % כלהביטויים.length]);
+    setביטוייקרב(phrases);
+    setפגיעותשלי(0);
+    setניקודשלי(0);
+    setפגיעותיריב(0);
+    setמנצח(null);
+    setספירהלאחור(3);
+    setמצבמסך('countdown');
   };
 
   return (
@@ -224,13 +348,15 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
         background: 'linear-gradient(160deg, #130924 0%, #29124e 50%, #0d061a 100%)',
         direction: 'rtl',
       }}
-      onClick={חדר?.status === 'playing' || חדר?.status === 'countdown' ? handleTap : undefined}
+      onClick={מצבמסך === 'playing' ? handleTap : undefined}
     >
       {/* ━━ כותרת עליונה ━━ */}
       <div className="relative z-20 flex items-center justify-between px-4 pt-safe-top pt-4 pb-2 border-b border-white/10">
         <button
           onClick={() => {
             cancelAnimationFrame(animRef.current);
+            connRef.current?.close();
+            peerRef.current?.destroy();
             שנהמסך('פתיחה');
           }}
           className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white text-lg active:scale-95"
@@ -246,7 +372,7 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
       </div>
 
       {/* ━━ 1. לובי יצירת חדר / הצטרפות ━━ */}
-      {!חדר && (
+      {מצבמסך === 'lobby' && (
         <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6 max-w-sm mx-auto w-full">
           <div className="text-center space-y-2">
             <div className="text-6xl animate-bounce">⚔️</div>
@@ -261,7 +387,6 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
           <div className="w-full space-y-3">
             <button
               onClick={צורחדר}
-              disabled={טוען}
               className="w-full py-4 rounded-2xl font-bold text-lg bg-gradient-to-r from-amber-500 to-yellow-400 text-purple-950 shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
               style={{ fontFamily: '"Varela Round"' }}
             >
@@ -279,9 +404,9 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
                 className="flex-1 bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-center text-white font-bold text-lg placeholder:text-white/30 focus:outline-none focus:border-yellow-400"
               />
               <button
-                onClick={הצטרףלחדר}
-                disabled={טוען || !קודקלט.trim()}
-                className="px-5 py-3 rounded-2xl font-bold bg-indigo-600 hover:bg-indigo-500 text-white active:scale-95 transition-all"
+                onClick={() => הצטרףלחדר()}
+                disabled={!קודקלט.trim()}
+                className="px-5 py-3 rounded-2xl font-bold bg-indigo-600 hover:bg-indigo-500 text-white active:scale-95 transition-all disabled:opacity-50"
                 style={{ fontFamily: '"Varela Round"' }}
               >
                 הצטרף
@@ -289,16 +414,38 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
             </div>
           </div>
 
-          {הודעתשיתוף && (
+          {הודעתשגיאה && (
             <div className="p-3 bg-red-500/20 border border-red-400/40 rounded-xl text-red-300 text-xs font-bold text-center">
-              {הודעתשיתוף}
+              {הודעתשגיאה}
             </div>
           )}
         </div>
       )}
 
-      {/* ━━ 2. חדר נוצר — ממתין ליריב ━━ */}
-      {חדר && חדר.status === 'waiting' && (
+      {/* ━━ 2. אנימציית יצירת חדר ━━ */}
+      {מצבמסך === 'creating' && (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-4 text-center">
+          <div className="w-16 h-16 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+          <h3 className="text-white font-bold text-lg" style={{ fontFamily: '"Varela Round"' }}>
+            יוצר ומחבר חדר קרב ברשת... 🌐
+          </h3>
+          <p className="text-white/50 text-xs">פתיחת חיבור ישיר ומאובטח</p>
+        </div>
+      )}
+
+      {/* ━━ 3. אנימציית הצטרפות ━━ */}
+      {מצבמסך === 'joining' && (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-4 text-center">
+          <div className="w-16 h-16 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+          <h3 className="text-white font-bold text-lg" style={{ fontFamily: '"Varela Round"' }}>
+            מתחבר לחדר של היריב... ⚔️
+          </h3>
+          <p className="text-white/50 text-xs">יוצר חיבור ישיר בזמן אמת</p>
+        </div>
+      )}
+
+      {/* ━━ 4. חדר מוכן — ממתין ליריב שיכנס ━━ */}
+      {מצבמסך === 'waiting' && (
         <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6 max-w-sm mx-auto w-full text-center">
           <div className="relative">
             <div className="w-24 h-24 rounded-full bg-amber-500/20 border-2 border-yellow-400 flex items-center justify-center text-4xl animate-pulse">
@@ -308,14 +455,14 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
           </div>
 
           <div>
-            <div className="text-white/60 text-xs mb-1 font-bold">קוד החדר שלך:</div>
+            <div className="text-white/60 text-xs mb-1 font-bold">החדר מוכן! קוד החדר שלך:</div>
             <div className="text-4xl font-extrabold text-yellow-300 tracking-widest bg-white/10 px-6 py-2 rounded-2xl border border-white/20 inline-block">
-              {חדר.id}
+              {קודחדר}
             </div>
           </div>
 
-          <p className="text-white/70 text-sm font-bold" style={{ fontFamily: '"Varela Round"' }}>
-            שלח את הקישור לחבר כדי להתחיל בקרב!
+          <p className="text-white/80 text-sm font-bold" style={{ fontFamily: '"Varela Round"' }}>
+            שתף את הקישור או שלח את הקוד לחבר כדי להתחיל מיד!
           </p>
 
           <button
@@ -327,23 +474,23 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
             <span>שתף קישור קרב לחבר</span>
           </button>
 
-          {הודעתשיתוף && (
+          {הודעתשגיאה && (
             <div className="p-3 bg-emerald-500/20 border border-emerald-400/40 rounded-xl text-emerald-300 text-xs font-bold animate-fade-in">
-              {הודעתשיתוף}
+              {הודעתשגיאה}
             </div>
           )}
         </div>
       )}
 
-      {/* ━━ 3. ספירה לאחור דרמטית (3... 2... 1...) ━━ */}
-      {ספירהלאחור !== null && (
+      {/* ━━ 5. ספירה לאחור דרמטית (3... 2... 1...) ━━ */}
+      {מצבמסך === 'countdown' && ספירהלאחור !== null && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-md p-6 text-center">
           <div className="flex items-center justify-center gap-6 mb-8 w-full max-w-xs">
             <div className="flex flex-col items-center">
               <div className="w-16 h-16 rounded-full bg-amber-500/20 border-2 border-yellow-400 flex items-center justify-center text-3xl mb-1">
                 🧲
               </div>
-              <span className="text-white font-bold text-sm">{חדר?.hostName}</span>
+              <span className="text-white font-bold text-sm">{תפקיד === 'host' ? שםשחקן : שםיריב}</span>
             </div>
 
             <div className="text-3xl font-extrabold text-red-500 animate-pulse">VS</div>
@@ -352,7 +499,7 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
               <div className="w-16 h-16 rounded-full bg-indigo-500/20 border-2 border-indigo-400 flex items-center justify-center text-3xl mb-1">
                 🧲
               </div>
-              <span className="text-white font-bold text-sm">{חדר?.guestName || 'יריב'}</span>
+              <span className="text-white font-bold text-sm">{תפקיד === 'guest' ? שםשחקן : (שםיריב || 'יריב')}</span>
             </div>
           </div>
 
@@ -369,22 +516,22 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
         </div>
       )}
 
-      {/* ━━ 4. מסך הקרב הפעיל (Live Battle) ━━ */}
-      {חדר && (חדר.status === 'playing' || חדר.status === 'countdown') && (
+      {/* ━━ 6. מסך הקרב הפעיל (Live Battle) ━━ */}
+      {מצבמסך === 'playing' && (
         <div className="flex-1 flex flex-col justify-between p-4 relative z-10">
           {/* סרגל קרב עליון (Battle Health Bars) */}
           <div className="w-full bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-3 shadow-lg flex items-center justify-between gap-4">
-            {/* שחקן מארח */}
+            {/* שחקן 1 */}
             <div className="flex-1 text-right">
               <div className="flex items-center justify-between text-xs text-yellow-300 font-bold mb-1">
-                <span>{חדר.hostName}</span>
-                <span>{תפקיד === 'host' ? פגיעותמקומיות : חדר.hostHits}/10 🎯</span>
+                <span>{שםשחקן} (אני)</span>
+                <span>{פגיעותשלי}/10 🎯</span>
               </div>
               <div className="w-full h-2.5 bg-black/40 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-300"
                   style={{
-                    width: `${((תפקיד === 'host' ? פגיעותמקומיות : חדר.hostHits) / 10) * 100}%`,
+                    width: `${(פגיעותשלי / 10) * 100}%`,
                   }}
                 />
               </div>
@@ -392,17 +539,17 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
 
             <div className="text-sm font-extrabold text-red-400">⚔️</div>
 
-            {/* שחקן אורח */}
+            {/* שחקן 2 (יריב) */}
             <div className="flex-1 text-left">
               <div className="flex items-center justify-between text-xs text-indigo-300 font-bold mb-1">
-                <span>{חדר.guestHits}/10 🎯</span>
-                <span>{חדר.guestName || 'יריב'}</span>
+                <span>{פגיעותיריב}/10 🎯</span>
+                <span>{שםיריב || 'יריב'}</span>
               </div>
               <div className="w-full h-2.5 bg-black/40 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 transition-all duration-300"
                   style={{
-                    width: `${((תפקיד === 'guest' ? פגיעותמקומיות : חדר.guestHits) / 10) * 100}%`,
+                    width: `${(פגיעותיריב / 10) * 100}%`,
                   }}
                 />
               </div>
@@ -447,30 +594,29 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
         </div>
       )}
 
-      {/* ━━ 5. מסך ניצחון / סיום הקרב ━━ */}
-      {חדר && חדר.status === 'ended' && (
+      {/* ━━ 7. מסך ניצחון / סיום הקרב ━━ */}
+      {מצבמסך === 'ended' && (
         <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6 max-w-sm mx-auto w-full text-center">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             className="text-8xl mb-2"
           >
-            {חדר.winner === שםשחקן ? '🏆' : '🥈'}
+            {מנצח === שםשחקן ? '🏆' : '🥈'}
           </motion.div>
 
           <div>
             <h2 className="text-3xl font-extrabold text-white mb-1" style={{ fontFamily: '"Varela Round"' }}>
-              {חדר.winner === שםשחקן ? 'ניצחת בקרב! 🎉' : `${חדר.winner} ניצח בקרב!`}
+              {מנצח === שםשחקן ? 'ניצחת בקרב! 🎉' : `${מנצח || 'היריב'} ניצח בקרב!`}
             </h2>
             <p className="text-white/60 text-sm" style={{ fontFamily: '"Varela Round"' }}>
-              {חדר.hostName} ({חדר.hostHits}) — {חדר.guestName} ({חדר.guestHits})
+              {שםשחקן} ({פגיעותשלי}) — {שםיריב || 'יריב'} ({פגיעותיריב})
             </p>
           </div>
 
           <div className="w-full space-y-3">
             <button
               onClick={קרבחוזר}
-              disabled={טוען}
               className="w-full py-4 rounded-2xl font-bold text-lg bg-gradient-to-r from-amber-500 to-yellow-400 text-purple-950 shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
               style={{ fontFamily: '"Varela Round"' }}
             >
@@ -488,18 +634,16 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
             </button>
 
             <button
-              onClick={() => שנהמסך('פתיחה')}
+              onClick={() => {
+                connRef.current?.close();
+                peerRef.current?.destroy();
+                שנהמסך('פתיחה');
+              }}
               className="w-full py-3 text-white/60 hover:text-white text-sm font-bold"
             >
               חזרה לעמוד הבית 🏠
             </button>
           </div>
-
-          {הודעתשיתוף && (
-            <div className="p-3 bg-emerald-500/20 border border-emerald-400/40 rounded-xl text-emerald-300 text-xs font-bold animate-fade-in">
-              {הודעתשיתוף}
-            </div>
-          )}
         </div>
       )}
     </div>
