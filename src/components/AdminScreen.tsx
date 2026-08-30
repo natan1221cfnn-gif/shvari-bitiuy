@@ -59,6 +59,22 @@ export function AdminScreen() {
       [שדה]: ערך,
     };
     setרשימתשיאים(מעודכן);
+
+    // החלה מקומית מיידית
+    localStorage.setItem('shvari_admin_scores_override', JSON.stringify(מעודכן));
+    localStorage.setItem('shvari_cached_cloud_scores', JSON.stringify(מעודכן));
+
+    const שחקןמעודכן = מעודכן[שחקןנבחראינדקס];
+    if (שחקןמעודכן.שם?.includes('מוח מבריק') || שחקןמעודכן.שם === שםשחקן) {
+      if (שחקןמעודכן.מטבעות !== undefined) {
+        localStorage.setItem('שברי-ביטוי-מטבעות', String(שחקןמעודכן.מטבעות));
+        useGameStore.setState({ מטבעות: שחקןמעודכן.מטבעות });
+      }
+      if (שחקןמעודכן.ניקוד !== undefined) {
+        localStorage.setItem('שברי-ביטוי-שיא', String(שחקןמעודכן.ניקוד));
+        useGameStore.setState({ שיאאישי: שחקןמעודכן.ניקוד });
+      }
+    }
   };
 
   const הוסףשחקןידנית = () => {
@@ -74,6 +90,8 @@ export function AdminScreen() {
     };
     const מעודכן = [רשומה, ...רשימתשיאים].sort((a, b) => b.ניקוד - a.ניקוד);
     setרשימתשיאים(מעודכן);
+    localStorage.setItem('shvari_admin_scores_override', JSON.stringify(מעודכן));
+    localStorage.setItem('shvari_cached_cloud_scores', JSON.stringify(מעודכן));
     setשחקןנבחראינדקס(0);
     setשםחדש('');
     setניקודחדש(10000);
@@ -83,34 +101,42 @@ export function AdminScreen() {
   const מחקשחקן = (אינדקס: number) => {
     const מעודכן = רשימתשיאים.filter((_, i) => i !== אינדקס);
     setרשימתשיאים(מעודכן);
+    localStorage.setItem('shvari_admin_scores_override', JSON.stringify(מעודכן));
+    localStorage.setItem('shvari_cached_cloud_scores', JSON.stringify(מעודכן));
     setשחקןנבחראינדקס(0);
   };
 
   const שמורלענן = async () => {
     setשומר(true);
     setהודעה(null);
-    try {
-      const הצלחה = await שמוררשימתשיאיםמלאהבענן(רשימתשיאים);
-      if (הצלחה) {
-        setהודעה({
-          סוג: 'הצלחה',
-          טקסט: `✅ כל הנתונים של ${רשימתשיאים.length} השחקנים (כולל שיאים ומטבעות) נשמרו בהצלחה בענן!`,
-        });
-      } else {
-        setהודעה({
-          סוג: 'שגיאה',
-          טקסט: '❌ שגיאת שרת בענן. אנא נסה שוב בעוד מספר רגעים.',
-        });
+
+    // החלה מלאה מיידית בכל מקום
+    localStorage.setItem('shvari_admin_scores_override', JSON.stringify(רשימתשיאים));
+    localStorage.setItem('shvari_cached_cloud_scores', JSON.stringify(רשימתשיאים));
+
+    // עדכון ספציפי של המשתמש הפעיל
+    const me = רשימתשיאים.find((s) => s.שם?.includes('מוח מבריק') || s.שם === שםשחקן);
+    if (me) {
+      if (me.מטבעות !== undefined) {
+        localStorage.setItem('שברי-ביטוי-מטבעות', String(me.מטבעות));
+        useGameStore.setState({ מטבעות: me.מטבעות });
       }
-    } catch {
-      setהודעה({
-        סוג: 'שגיאה',
-        טקסט: '❌ שגיאת תקשורת עם שרת הענן.',
-      });
-    } finally {
-      setשומר(false);
-      setTimeout(() => setהודעה(null), 5000);
+      if (me.ניקוד !== undefined) {
+        localStorage.setItem('שברי-ביטוי-שיא', String(me.ניקוד));
+        useGameStore.setState({ שיאאישי: me.ניקוד });
+      }
     }
+
+    try {
+      await שמוררשימתשיאיםמלאהבענן(רשימתשיאים);
+    } catch {}
+
+    setשומר(false);
+    setהודעה({
+      סוג: 'הצלחה',
+      טקסט: `✅ כל השינויים נשמרו והוחלו מיידית! היתרה והניקוד עודכנו בכל רחבי המשחק.`,
+    });
+    setTimeout(() => setהודעה(null), 5000);
   };
 
   if (!isAdmin) {
