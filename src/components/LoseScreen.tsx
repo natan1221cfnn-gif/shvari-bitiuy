@@ -45,11 +45,19 @@ export function LoseScreen() {
     התחלמשחק,
     אפסמשחק,
     הצלתמשחק,
+    שמורשיא,
   } = useGameStore();
 
   const [copied, setCopied] = useState(false);
   const שיאחדש = ניקוד >= שיאאישי && ניקוד > 0;
   const הואטירוף = מצבמשחק === 'טירוף';
+
+  // שמירה וסנכרון מיידי לענן של תוצאת המשחק
+  useEffect(() => {
+    if (ניקוד > 0) {
+      שמורשיא();
+    }
+  }, []); // eslint-disable-line
 
   const handleWhatsAppChallenge = () => {
     const text = הואטירוף
