@@ -211,18 +211,48 @@ export function IsraelMapScreen() {
         </div>
       </div>
 
-      {/* 🚀 3. כפתור פליי ענק תחתון "▶️ שחק שלב X" */}
-      <div className="relative z-30 p-3 bg-black/90 backdrop-blur-xl border-t border-cyan-500/30">
+      {/* 🚀 3. סרגל פרטי שלב מורחב וכפתור פליי ענק תחתון */}
+      <div className="relative z-30 px-3 pt-2.5 pb-2 bg-black/90 backdrop-blur-xl border-t border-cyan-500/30">
         <div className="max-w-sm mx-auto space-y-2">
+          {/* תגית תקציר נתוני השלב הנבחר (יעד חיבורים, מהירות, וכוכבים שנאספו) */}
+          <div
+            onClick={() => setמודאלשלבפתוח(true)}
+            className="p-2.5 rounded-2xl bg-purple-950/70 border border-purple-400/40 shadow-inner flex items-center justify-between cursor-pointer active:scale-98 transition-transform"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">{שלבנבחר.אייקוןאזור}</span>
+              <div className="text-right leading-tight">
+                <div className="text-xs font-black text-white flex items-center gap-1">
+                  <span>שלב {שלבנבחר.מספרשלב}</span>
+                  <span className="text-cyan-300">({שלבנבחר.שםאזור})</span>
+                </div>
+                <div className="text-[10px] text-white/70 font-bold flex items-center gap-2 mt-0.5">
+                  <span>🎯 יעד: {שלבנבחר.יעדפגיעות}</span>
+                  <span>⚡ {שלבנבחר.מהירותבסיס}ms</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-end">
+              <div className="text-amber-300 text-xs font-black">
+                {'⭐'.repeat(כוכבימפה[שלבנבחר.מספרשלב] || 0) || '☆☆☆'}
+              </div>
+              <span className="text-[9px] text-cyan-300 underline font-bold mt-0.5">
+                פרטים מלאים ℹ️
+              </span>
+            </div>
+          </div>
+
+          {/* כפתור פליי ראשי */}
           <button
             onClick={() => handleStartStage(שלבנבחר.מספרשלב)}
-            className="w-full py-4 rounded-2xl font-black text-xl text-black flex items-center justify-center gap-3 active:scale-95 transition-all shadow-[0_0_35px_rgba(0,240,255,0.9)] border-2 border-cyan-200"
+            className="w-full py-3.5 rounded-2xl font-black text-lg text-black flex items-center justify-center gap-2.5 active:scale-95 transition-all shadow-[0_0_30px_rgba(0,240,255,0.9)] border-2 border-cyan-200"
             style={{
               background: 'linear-gradient(135deg, #00f0ff 0%, #38bdf8 50%, #818cf8 100%)',
               fontFamily: '"Varela Round", sans-serif',
             }}
           >
-            <span className="text-2xl">▶️</span>
+            <span className="text-xl">▶️</span>
             <span>שחק שלב {שלבנבחר.מספרשלב}</span>
           </button>
         </div>
