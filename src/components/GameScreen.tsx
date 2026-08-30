@@ -123,8 +123,14 @@ export function GameScreen() {
     setScreenShake(true);
     setTimeout(() => setScreenShake(false), 240);
 
+    const activeSkin = useGameStore.getState().סקיןפעיל;
+
     if (type === 'success') {
-      setScreenFlash('green');
+      if (activeSkin === 'דרקון_להבה') setScreenFlash('red');
+      else if (activeSkin === 'רעם_קוונטי') setScreenFlash('green');
+      else if (activeSkin === 'חור_שחור') setScreenFlash('red');
+      else if (activeSkin === 'אלוהי_מגנט' || activeSkin === 'זהב') setScreenFlash('yellow');
+      else setScreenFlash('green');
       setRings((prev) => [...prev, Date.now()]);
       setTimeout(() => setScreenFlash(null), 250);
     } else if (type === 'almost') {

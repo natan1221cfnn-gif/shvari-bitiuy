@@ -125,6 +125,51 @@ export function MagnetBlock({
       };
     }
 
+    if (סקין === 'דרקון_להבה') {
+      return {
+        bg: 'linear-gradient(135deg, #7f1d1d 0%, #dc2626 50%, #f97316 100%)',
+        border: 'border-rose-300',
+        glow: '0 0 40px rgba(239, 68, 68, 0.95), 0 0 70px rgba(249, 115, 22, 0.6)',
+        badge: '🔥',
+      };
+    }
+
+    if (סקין === 'רעם_קוונטי') {
+      return {
+        bg: 'linear-gradient(135deg, #0c4a6e 0%, #0284c7 50%, #38bdf8 100%)',
+        border: 'border-cyan-200',
+        glow: '0 0 45px rgba(0, 240, 255, 0.95), 0 0 80px rgba(56, 189, 248, 0.7)',
+        badge: '⚡',
+      };
+    }
+
+    if (סקין === 'חור_שחור') {
+      return {
+        bg: 'linear-gradient(135deg, #0f172a 0%, #581c87 50%, #a21caf 100%)',
+        border: 'border-fuchsia-300',
+        glow: '0 0 50px rgba(192, 132, 252, 0.9), 0 0 90px rgba(217, 70, 239, 0.6)',
+        badge: '🌌',
+      };
+    }
+
+    if (סקין === 'יהלום_חלל') {
+      return {
+        bg: 'linear-gradient(135deg, #38bdf8 0%, #f472b6 35%, #facc15 70%, #4ade80 100%)',
+        border: 'border-white',
+        glow: '0 0 45px rgba(56, 189, 248, 0.9), 0 0 85px rgba(244, 114, 182, 0.8)',
+        badge: '💎',
+      };
+    }
+
+    if (סקין === 'אלוהי_מגנט') {
+      return {
+        bg: 'linear-gradient(135deg, #ffd700 0%, #ffae19 35%, #ff3b00 70%, #fff275 100%)',
+        border: 'border-yellow-200',
+        glow: '0 0 60px rgba(253, 224, 71, 1), 0 0 100px rgba(245, 158, 11, 0.9)',
+        badge: '👑',
+      };
+    }
+
     return {
       bg: הואשמאל
         ? 'linear-gradient(135deg, #4facfe, #00f2fe)'
