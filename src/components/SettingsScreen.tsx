@@ -142,15 +142,65 @@ export function SettingsScreen() {
           </div>
         </motion.div>
 
+        {/* 🚀 אודות המפתח והפיתוח - Natan Webs */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="rounded-3xl p-5 border-2 border-cyan-400/40 relative overflow-hidden shadow-[0_0_30px_rgba(0,240,255,0.2)]"
+          style={{
+            background: 'linear-gradient(135deg, rgba(12,4,28,0.95) 0%, rgba(30,10,60,0.9) 100%)',
+          }}
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-400 via-purple-500 to-amber-300 p-0.5 flex items-center justify-center shadow-[0_0_15px_#00f0ff]">
+              <div className="w-full h-full bg-black/80 rounded-[14px] flex items-center justify-center text-2xl">
+                💻
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-white font-black text-lg" style={{ fontFamily: '"Varela Round"' }}>
+                  Natan Webs
+                </h3>
+                <span className="bg-cyan-400/20 text-cyan-300 border border-cyan-400/40 text-[10px] font-black px-2 py-0.5 rounded-full">
+                  יוצר המשחק
+                </span>
+              </div>
+              <p className="text-white/60 text-xs mt-0.5 font-medium">
+                פיתוח משחקים, אפליקציות ואתרי פרימיום
+              </p>
+            </div>
+          </div>
+
+          <p className="text-white/70 text-xs leading-relaxed mb-4" style={{ fontFamily: '"Varela Round"' }}>
+            המשחק "שברי ביטוי" פותח ועוצב מ-0 ע״י <strong className="text-amber-300">Natan Webs</strong>. רוצים אתר, משחק או אפליקציה מותאמת אישית לעסק שלכם?
+          </p>
+
+          <a
+            href="https://natanwebs.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-3.5 rounded-2xl font-black text-sm text-black flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(0,240,255,0.7)] active:scale-95 transition-all"
+            style={{
+              background: 'linear-gradient(135deg, #00f0ff 0%, #38bdf8 50%, #facc15 100%)',
+              fontFamily: '"Varela Round"',
+            }}
+          >
+            <span>🌐</span>
+            <span>בקרו באתר natanwebs.com ←</span>
+          </a>
+        </motion.div>
+
         {/* גרסה */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="text-center text-white/20 text-xs"
+          className="text-center text-white/30 text-xs pt-2"
           style={{ fontFamily: '"Varela Round"' }}
         >
-          שברי ביטוי גרסה 1.1.2 🧲
+          שברי ביטוי • פותח ע״י Natan Webs 💡
         </motion.div>
       </div>
     </div>
