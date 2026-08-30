@@ -279,8 +279,6 @@ export function GameScreen() {
           id: Date.now(),
           text: currSpecial === 'זהב'
             ? `🌟 ${currPhrase.שמאל} ${currPhrase.ימין} (+300!)`
-            : הואטירוף
-            ? `⚡ ${currPhrase.שמאל} ${currPhrase.ימין} (+2ש׳!)`
             : `${currPhrase.שמאל} ${currPhrase.ימין}`,
           isGold: currSpecial === 'זהב',
         });

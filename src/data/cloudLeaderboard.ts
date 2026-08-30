@@ -1,18 +1,16 @@
 import type { שיא } from '../types';
 
-// מסד נתונים ענני חינמי ומהיר לשיאים אמיתיים בזמן אמת
-const CLOUD_URL = 'https://kvdb.io/AWdE1oRrqvPq1iE4c9HqD7/shvari_real_scores';
+// מסד נתונים ענני חינמי, גלובלי ומהיר לשיאים אמיתיים בזמן אמת
+const CLOUD_ENDPOINT = 'https://api.restful-api.dev/objects/ff808181a04ccf2d01a05043f1ea0e5a';
 
 export async function טעןשיאיםמהענן(): Promise<שיא[]> {
   try {
-    const res = await fetch(CLOUD_URL, { cache: 'no-store' });
-    if (!res.ok) {
-      if (res.status === 404) return [];
-      return [];
-    }
-    const data = await res.json();
-    if (Array.isArray(data)) {
-      return data.sort((a: שיא, b: שיא) => (b.ניקוד || 0) - (a.ניקוד || 0)).slice(0, 30);
+    const res = await fetch(CLOUD_ENDPOINT, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const scores = json?.data?.scores;
+    if (Array.isArray(scores)) {
+      return scores.sort((a: שיא, b: שיא) => (b.ניקוד || 0) - (a.ניקוד || 0)).slice(0, 50);
     }
     return [];
   } catch {
@@ -24,16 +22,24 @@ export async function שלחשיאלענן(שיאחדש: שיא): Promise<void> 
   try {
     if (!שיאחדש.ניקוד || שיאחדש.ניקוד <= 0) return;
     const קיימים = await טעןשיאיםמהענן();
-    
-    // מניעת כפילויות זהות באותה דקה
+
+    // מניעת כפילויות של אותה תוצאה בדיוק
+    const קיים = קיימים.some(
+      (s) => s.שם === שיאחדש.שם && s.ניקוד === שיאחדש.ניקוד && s.תאריך === שיאחדש.תאריך
+    );
+    if (קיים) return;
+
     const מעודכן = [...קיימים, שיאחדש]
       .sort((a, b) => (b.ניקוד || 0) - (a.ניקוד || 0))
       .slice(0, 50);
 
-    await fetch(CLOUD_URL, {
-      method: 'POST',
+    await fetch(CLOUD_ENDPOINT, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(מעודכן),
+      body: JSON.stringify({
+        name: 'shvari_real_scores_production_v1',
+        data: { scores: מעודכן },
+      }),
     });
   } catch {
     /* ignore */
