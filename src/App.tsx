@@ -14,6 +14,7 @@ import { DuelScreen } from './components/DuelScreen';
 
 import { IsraelMapScreen } from './components/IsraelMapScreen';
 import { CityBattlesScreen } from './components/CityBattlesScreen';
+import { AdminScreen } from './components/AdminScreen';
 
 const מעברדף = {
   initial: { opacity: 0, scale: 0.97 },
@@ -122,6 +123,11 @@ export function App() {
         {מסךפעיל === 'מלחמת-ערים' && (
           <motion.div key="מלחמת-ערים" {...מעברדף}>
             <CityBattlesScreen />
+          </motion.div>
+        )}
+        {מסךפעיל === 'ניהול' && (
+          <motion.div key="ניהול" {...מעברדף}>
+            <AdminScreen />
           </motion.div>
         )}
       </AnimatePresence>

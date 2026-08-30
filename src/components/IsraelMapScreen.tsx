@@ -92,8 +92,29 @@ export function IsraelMapScreen() {
         className="flex-1 overflow-y-auto px-4 py-8 relative space-y-6"
         style={{ scrollBehavior: 'smooth' }}
       >
+        {/* 🌌 רקע מפת ישראל טופוגרפית עם קווי מתאר זוהרים */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-25">
+          <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 1000">
+            {/* קו חוף הים התיכון */}
+            <path
+              d="M 25 100 Q 20 250 22 450 Q 28 650 35 800 Q 40 900 48 980"
+              fill="none"
+              stroke="#00f0ff"
+              strokeWidth="2"
+              strokeDasharray="4 4"
+            />
+            {/* ים כנרת וים המלח */}
+            <ellipse cx="65" cy="220" rx="6" ry="12" fill="none" stroke="#00f0ff" strokeWidth="2" />
+            <path d="M 68 460 Q 65 520 70 580 Q 72 630 68 670" fill="none" stroke="#00f0ff" strokeWidth="3" />
+            {/* קווי גובה וטופוגרפיה סייבר */}
+            <circle cx="50" cy="120" r="40" fill="none" stroke="#99ddff" strokeWidth="0.5" strokeDasharray="3 6" />
+            <circle cx="45" cy="500" r="60" fill="none" stroke="#ffd700" strokeWidth="0.5" strokeDasharray="3 6" />
+            <circle cx="52" cy="850" r="70" fill="none" stroke="#ffaa00" strokeWidth="0.5" strokeDasharray="3 6" />
+          </svg>
+        </div>
+
         {/* קו ניאון מפותל שמחבר את שלבי המפה */}
-        <div className="absolute top-12 bottom-12 left-1/2 -translate-x-1/2 w-2 bg-gradient-to-b from-cyan-400 via-fuchsia-500 to-amber-400 opacity-40 blur-[1.5px] pointer-events-none rounded-full" />
+        <div className="absolute top-12 bottom-12 left-1/2 -translate-x-1/2 w-2.5 bg-gradient-to-b from-cyan-400 via-fuchsia-500 to-amber-400 opacity-50 blur-[2px] pointer-events-none rounded-full" />
 
         {אזורימפה.slice().reverse().map((אזור) => {
           const שלביהאזור = שלבים.filter(

@@ -388,6 +388,21 @@ export function StartScreen() {
           </span>
         </button>
 
+        {/* 👑 כפתור ניהול בלעדי עבור מוח מבריק בלבד */}
+        {שםשחקן.includes('מוח מבריק') && (
+          <button
+            onClick={() => שנהמסך('ניהול')}
+            className="w-full py-2.5 rounded-2xl font-black text-black text-xs flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(251,191,36,0.6)] border border-yellow-300 animate-pulse active:scale-95 transition-all"
+            style={{
+              background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #f43f5e 100%)',
+            }}
+          >
+            <span>👑</span>
+            <span>פאנל ניהול ענן בלייב (בלעדי למנהל)</span>
+            <span>⚙️</span>
+          </button>
+        )}
+
         {/* כפתורים משניים */}
         <div className="flex gap-2">
           <button

@@ -134,6 +134,26 @@ export async function טעןשיאיםמהענן(): Promise<שיא[]> {
   return סנןונקהכפילויות([]);
 }
 
+// 👑 עדכון ישיר מלא של רשימת השיאים (פאנל מנהל)
+export async function שמוררשימתשיאיםמלאהבענן(רשימה: שיא[]): Promise<boolean> {
+  try {
+    const מסודר = [...רשימה].sort((a, b) => (b.ניקוד || 0) - (a.ניקוד || 0));
+    localStorage.setItem('shvari_cached_cloud_scores', JSON.stringify(מסודר));
+
+    const res = await fetch(CLOUD_ENDPOINT, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'shvari_real_scores_production_v1',
+        data: { scores: מסודר },
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // ⚡ שליחת שיא חדש לענן ללא דריסת שיאים קיימים
 export async function שלחשיאלענן(שיאחדש: שיא): Promise<void> {
   try {
