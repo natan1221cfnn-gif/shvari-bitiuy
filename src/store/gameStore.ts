@@ -16,7 +16,7 @@ import type {
   סקיןמידע,
 } from '../types';
 import { בחרביטויאקראי, פלטרלפיקטגוריה, ביטוייםיומיים } from '../data/phrases';
-import { שלחשיאלענן } from '../data/cloudLeaderboard';
+import { שלחשיאלענן, עדכןשםשחקןבענן } from '../data/cloudLeaderboard';
 
 export const רשימתסקינים: סקיןמידע[] = [
   {
@@ -202,9 +202,11 @@ export const useGameStore = create<מצבמשחק & פעולותחנות>((set, 
   גלגלסובבלאחרונה: טעןגלגללאחרונה(),
 
   עדכןשםשחקן: (שם) => {
+    const שםישן = get().שםשחקן;
     const שםנקי = שם.trim() || 'שחקן';
     localStorage.setItem('שברי-ביטוי-שם-שחקן', שםנקי);
     set({ שםשחקן: שםנקי });
+    עדכןשםשחקןבענן(שםישן, שםנקי);
   },
 
   שנהמסך: (מסך) => set({ מסךפעיל: מסך }),

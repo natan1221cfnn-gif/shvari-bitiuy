@@ -1,7 +1,20 @@
 import type { שיא } from '../types';
 
-// מסד נתונים ענני חינמי, גלובלי ומהיר לשיאים אמיתיים בזמן אמת
 const CLOUD_ENDPOINT = 'https://api.restful-api.dev/objects/ff808181a04ccf2d01a05043f1ea0e5a';
+const PRESENCE_ENDPOINT = 'https://api.restful-api.dev/objects/ff808181a04ccf2d01a0504a60140e69';
+
+function קבלמזההמכשיר(): string {
+  try {
+    let id = localStorage.getItem('שברי-ביטוי-מזהה-מכשיר');
+    if (!id) {
+      id = 'dev_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+      localStorage.setItem('שברי-ביטוי-מזהה-מכשיר', id);
+    }
+    return id;
+  } catch {
+    return 'anon_' + Math.random().toString(36).substring(2, 8);
+  }
+}
 
 export async function טעןשיאיםמהענן(): Promise<שיא[]> {
   try {
@@ -23,7 +36,6 @@ export async function שלחשיאלענן(שיאחדש: שיא): Promise<void> 
     if (!שיאחדש.ניקוד || שיאחדש.ניקוד <= 0) return;
     const קיימים = await טעןשיאיםמהענן();
 
-    // מניעת כפילויות של אותה תוצאה בדיוק
     const קיים = קיימים.some(
       (s) => s.שם === שיאחדש.שם && s.ניקוד === שיאחדש.ניקוד && s.תאריך === שיאחדש.תאריך
     );
@@ -43,5 +55,70 @@ export async function שלחשיאלענן(שיאחדש: שיא): Promise<void> 
     });
   } catch {
     /* ignore */
+  }
+}
+
+// 🔄 עדכון אוטומטי של שם השחקן בלוח השיאים העולמי
+export async function עדכןשםשחקןבענן(שםישן: string, שםחדש: string): Promise<void> {
+  try {
+    if (!שםחדש || שםישן === שםחדש) return;
+    const קיימים = await טעןשיאיםמהענן();
+    let עודכן = false;
+
+    const מעודכן = קיימים.map((s) => {
+      if (s.שם === שםישן) {
+        עודכן = true;
+        return { ...s, שם: שםחדש };
+      }
+      return s;
+    });
+
+    if (עודכן) {
+      await fetch(CLOUD_ENDPOINT, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'shvari_real_scores_production_v1',
+          data: { scores: מעודכן },
+        }),
+      });
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+// 🟢 מונה שחקנים מחוברים אמיתי בזמן אמת (100% Real Live Online Counter)
+export async function אותחייםומונהמחוברים(): Promise<number> {
+  try {
+    const deviceId = קבלמזההמכשיר();
+    const now = Date.now();
+    const res = await fetch(PRESENCE_ENDPOINT, { cache: 'no-store' });
+    if (!res.ok) return 1;
+    const json = await res.json();
+    const active: Record<string, number> = json?.data?.active || {};
+
+    // ניקוי מחוברים שלא שלחו אות חיים מעל 50 שניות
+    const cleaned: Record<string, number> = {};
+    for (const [id, time] of Object.entries(active)) {
+      if (now - time < 50000) {
+        cleaned[id] = time;
+      }
+    }
+    cleaned[deviceId] = now;
+
+    // עדכון מסד הנתונים
+    fetch(PRESENCE_ENDPOINT, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'shvari_live_presence_production_v1',
+        data: { active: cleaned },
+      }),
+    }).catch(() => {});
+
+    return Math.max(Object.keys(cleaned).length, 1);
+  } catch {
+    return 1;
   }
 }

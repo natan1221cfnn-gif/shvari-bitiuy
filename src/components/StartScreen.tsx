@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { MascotMagneti } from './MascotMagneti';
 import { קטגוריהסוג, קטגוריותסמל } from '../types';
+import { אותחייםומונהמחוברים } from '../data/cloudLeaderboard';
 
 const קטגוריותרשימה: קטגוריהסוג[] = [
   'הכל',
@@ -52,6 +53,22 @@ export function StartScreen() {
   const [מראהקטגוריות, setמראהקטגוריות] = useState(false);
   const [מראהעריכתשם, setמראהעריכתשם] = useState(false);
   const [שםקלט, setשםקלט] = useState(שםשחקן);
+  const [מחוברים, setמחוברים] = useState(1);
+
+  useEffect(() => {
+    let mounted = true;
+    const updatePresence = () => {
+      אותחייםומונהמחוברים().then((count) => {
+        if (mounted) setמחוברים(count);
+      });
+    };
+    updatePresence();
+    const interval = setInterval(updatePresence, 20000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   const רמות = ['קל', 'בינוני', 'מטורף'] as const;
 
@@ -131,14 +148,14 @@ export function StartScreen() {
         </button>
       </div>
 
-      {/* ━━ 2. באנר פרופיל שחקן (Gamer Profile Badge) ━━ */}
-      <div className="relative z-10 w-full px-4 pt-1 pb-1">
+      {/* ━━ 2. באנר פרופיל שחקן (Gamer Profile Badge) & מונה מחוברים חי ━━ */}
+      <div className="relative z-10 w-full px-4 pt-1 pb-1 flex items-center gap-2">
         <button
           onClick={() => {
             setשםקלט(שםשחקן);
             setמראהעריכתשם(true);
           }}
-          className="w-full py-1.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 flex items-center justify-between text-white text-xs font-bold shadow-sm active:scale-98 transition-all"
+          className="flex-1 py-1.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 flex items-center justify-between text-white text-xs font-bold shadow-sm active:scale-98 transition-all min-w-0"
           style={{ fontFamily: '"Varela Round"' }}
         >
           <div className="flex items-center gap-1.5 truncate">
@@ -150,6 +167,18 @@ export function StartScreen() {
             ערוך שם ✏️
           </span>
         </button>
+
+        {/* 🟢 מונה שחקנים מחוברים אמיתי בזמן אמת */}
+        <div
+          className="py-1.5 px-2.5 rounded-xl bg-emerald-500/15 border border-emerald-400/30 flex items-center gap-1.5 text-emerald-300 text-[11px] font-bold shrink-0 shadow-sm"
+          style={{ fontFamily: '"Varela Round"' }}
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span>{מחוברים} מחוברים</span>
+        </div>
       </div>
 
       {/* חלק עליון: דמות מגנטי + כותרת */}
