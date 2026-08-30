@@ -119,51 +119,13 @@ class מנועצליל {
     this.note(900, 0.035, 'square', 0.12, 0);
   }
 
-  // ─── מוזיקת רקע – אמביינט ────────────────────────────────
+  // ─── מוזיקת רקע (מושתק לחלוטין למניעת רעש רקע מיותר) ─────────────────
   הפעלרקע() {
-    if (this.רקעפועל) return;
-    this.רקעפועל = true;
-
-    const ctx = this.context;
-    this.רקעGain = ctx.createGain();
-    this.רקעGain.gain.setValueAtTime(this.עוצמה * 0.07, ctx.currentTime);
-    this.רקעGain.connect(ctx.destination);
-
-    // Drone pads
-    const pads = [65.4, 98.0, 130.8, 196.0];
-    const rates = [4.1, 5.3, 3.7, 6.2];
-
-    pads.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const lfo = ctx.createOscillator();
-      const lfoG = ctx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, ctx.currentTime);
-
-      lfo.frequency.setValueAtTime(1 / rates[i], ctx.currentTime);
-      lfoG.gain.setValueAtTime(freq * 0.008, ctx.currentTime);
-      lfo.connect(lfoG);
-      lfoG.connect(osc.frequency);
-
-      osc.connect(this.רקעGain!);
-      osc.start();
-      lfo.start();
-      this.רקעNodes.push(osc, lfo, lfoG);
-    });
+    // מושתק לחלוטין – משחק נקי ללא רחשי רקע
   }
 
   עצוררקע() {
     this.רקעפועל = false;
-    this.רקעNodes.forEach((n) => {
-      try { (n as OscillatorNode).stop?.(); } catch { /* ok */ }
-      try { n.disconnect(); } catch { /* ok */ }
-    });
-    this.רקעNodes = [];
-    if (this.רקעGain) {
-      try { this.רקעGain.disconnect(); } catch { /* ok */ }
-      this.רקעGain = null;
-    }
   }
 }
 
