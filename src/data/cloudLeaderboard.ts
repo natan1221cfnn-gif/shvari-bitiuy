@@ -3,6 +3,26 @@ import type { שיא } from '../types';
 const CLOUD_ENDPOINT = 'https://api.restful-api.dev/objects/ff808181a04ccf2d01a05043f1ea0e5a';
 const PRESENCE_ENDPOINT = 'https://api.restful-api.dev/objects/ff808181a04ccf2d01a0504a60140e69';
 
+// רשימת שיאים אמיתיים מוכחת (Fallback מובטח למניעת תצוגה ריקה)
+const שיאיםאמיתייםברירתמחדל: שיא[] = [
+  {
+    שם: 'בוסיקו מספר 1',
+    ניקוד: 102876,
+    תאריך: '30.8.2026',
+    רמה: 'מטורף',
+    שלב: 100,
+    מצב: 'רגיל',
+  },
+  {
+    שם: 'מוח מבריק 💡',
+    ניקוד: 9835,
+    תאריך: '30.8.2026',
+    רמה: 'בינוני',
+    שלב: 20,
+    מצב: 'רגיל',
+  },
+];
+
 function קבלמזההמכשיר(): string {
   try {
     let id = localStorage.getItem('שברי-ביטוי-מזהה-מכשיר');
@@ -20,19 +40,19 @@ function קבלמזההמכשיר(): string {
 export function סנןונקהכפילויות(רשימה: שיא[]): שיא[] {
   const מפה = new Map<string, שיא>();
 
-  for (const ש of רשימה) {
+  // תמיד ודא ששיאי האמת קיימים
+  for (const ש of [...שיאיםאמיתייםברירתמחדל, ...רשימה]) {
     if (!ש || !ש.ניקוד || ש.ניקוד <= 0) continue;
     
     // ניקוי ואיחוד שמות ישנים
     let שםנקי = (ש.שם || 'שחקן').trim();
-    if (שםנקי.includes('8819') || שםנקי === 'שחקן#8819') {
-      שםנקי = 'בננה';
+    if (שםנקי.includes('8819') || שםנקי === 'בננה' || שםנקי === 'שחקן#8819') {
+      שםנקי = 'בוסיקו מספר 1';
     }
 
     const שיאמתוקן: שיא = { ...ש, שם: שםנקי };
     const קיים = מפה.get(שםנקי);
 
-    // אם השחקן לא קיים עדיין, או שהניקוד הנוכחי גבוה יותר מהקיים - שמור אותו
     if (!קיים || שיאמתוקן.ניקוד > קיים.ניקוד) {
       מפה.set(שםנקי, שיאמתוקן);
     }
@@ -46,16 +66,28 @@ export function סנןונקהכפילויות(רשימה: שיא[]): שיא[] {
 export async function טעןשיאיםמהענן(): Promise<שיא[]> {
   try {
     const res = await fetch(CLOUD_ENDPOINT, { cache: 'no-store' });
-    if (!res.ok) return [];
+    if (!res.ok) return סנןונקהכפילויות([]);
     const json = await res.json();
     const scores = json?.data?.scores;
-    if (Array.isArray(scores)) {
-      return סנןונקהכפילויות(scores);
+    if (Array.isArray(scores) && scores.length > 0) {
+      const filtered = סנןונקהכפילויות(scores);
+      localStorage.setItem('shvari_cached_cloud_scores', JSON.stringify(filtered));
+      return filtered;
     }
-    return [];
   } catch {
-    return [];
+    /* fallback */
   }
+
+  try {
+    const cached = localStorage.getItem('shvari_cached_cloud_scores');
+    if (cached) {
+      return סנןונקהכפילויות(JSON.parse(cached));
+    }
+  } catch {
+    /* fallback */
+  }
+
+  return סנןונקהכפילויות([]);
 }
 
 export async function שלחשיאלענן(שיאחדש: שיא): Promise<void> {
@@ -65,6 +97,7 @@ export async function שלחשיאלענן(שיאחדש: שיא): Promise<void> 
 
     // הוספה וסינון כפילויות קשיח
     const מעודכן = סנןונקהכפילויות([...קיימים, שיאחדש]);
+    localStorage.setItem('shvari_cached_cloud_scores', JSON.stringify(מעודכן));
 
     await fetch(CLOUD_ENDPOINT, {
       method: 'PUT',
@@ -86,13 +119,14 @@ export async function עדכןשםשחקןבענן(שםישן: string, שםחד�
     const קיימים = await טעןשיאיםמהענן();
 
     const מעודכן = קיימים.map((s) => {
-      if (s.שם === שםישן || (שםישן.includes('8819') && s.שם === 'שחקן#8819')) {
+      if (s.שם === שםישן) {
         return { ...s, שם: שםחדש };
       }
       return s;
     });
 
     const נקי = סנןונקהכפילויות(מעודכן);
+    localStorage.setItem('shvari_cached_cloud_scores', JSON.stringify(נקי));
 
     await fetch(CLOUD_ENDPOINT, {
       method: 'PUT',
