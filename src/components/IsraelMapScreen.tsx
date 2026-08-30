@@ -1,287 +1,373 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
-import { אזורימפה, קבלשלבמפה } from '../data/israelMapData';
+import { קבלשלבמפה } from '../data/israelMapData';
 import type { שלבמפהמידע } from '../types';
 
 export function IsraelMapScreen() {
-  const { שנהמסך, שלבמפהנוכחי, כוכבימפה, התחלשלבמפה } = useGameStore();
-  const [שלבנבחר, setשלבנבחר] = useState<שלבמפהמידע | null>(null);
+  const { שנהמסך, שלבמפהנוכחי, כוכבימפה, התחלשלבמפה, מטבעות, שםשחקן, לבבות } = useGameStore();
+  const [שלבנבחר, setשלבנבחר] = useState<שלבמפהמידע>(קבלשלבמפה(שלבמפהנוכחי || 1));
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // סך הכל כוכבים שנאספו
   const סךכוכבים = Object.values(כוכבימפה).reduce((a, b) => a + b, 0);
 
-  // גלילה אוטומטית לשלב הנוכחי
   useEffect(() => {
-    const el = document.getElementById(`stage-node-${שלבמפהנוכחי}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    setשלבנבחר(קבלשלבמפה(שלבמפהנוכחי || 1));
   }, [שלבמפהנוכחי]);
 
-  const handleSelectStage = (מספר: number) => {
-    const מידע = קבלשלבמפה(מספר);
-    setשלבנבחר(מידע);
+  const handleStartStage = (stageNum: number) => {
+    התחלשלבמפה(stageNum);
   };
 
-  const handleStartStage = () => {
-    if (שלבנבחר) {
-      התחלשלבמפה(שלבנבחר.מספרשלב);
-    }
-  };
+  // רשימת אתרי ציון לאורך המפה
+  const אתריציון = [
+    {
+      id: 'hermon',
+      name: 'חרמון',
+      stage: 50,
+      icon: '❄️',
+      color: '#38bdf8',
+      desc: 'פסגת החרמון המושלגת',
+      yPercent: 8,
+      xPercent: 70,
+    },
+    {
+      id: 'haifa',
+      name: 'חיפה',
+      stage: 40,
+      icon: '🚢',
+      color: '#00f0ff',
+      desc: 'נמל חיפה והכרמל',
+      yPercent: 24,
+      xPercent: 32,
+    },
+    {
+      id: 'telaviv',
+      name: 'תל אביב',
+      stage: 30,
+      icon: '🏙️',
+      color: '#a855f7',
+      desc: 'גורדי השחקים של גוש דן',
+      yPercent: 42,
+      xPercent: 25,
+    },
+    {
+      id: 'jerusalem',
+      name: 'ירושלים',
+      stage: 20,
+      icon: '🏰',
+      color: '#facc15',
+      desc: 'חומות העיר העתיקה',
+      yPercent: 54,
+      xPercent: 68,
+    },
+    {
+      id: 'negev',
+      name: 'מכתש רמון',
+      stage: 10,
+      icon: '🏜️',
+      color: '#fb923c',
+      desc: 'מצוקי הנגב והמדבר',
+      yPercent: 75,
+      xPercent: 42,
+    },
+    {
+      id: 'eilat',
+      name: 'אילת',
+      stage: 1,
+      icon: '🌴',
+      color: '#f43f5e',
+      desc: 'חופי ים סוף והאלמוגים',
+      yPercent: 92,
+      xPercent: 50,
+    },
+  ];
 
-  // יצירת 50 שלבים מדרום (אילת 1) לצפון (חרמון 50)
-  // מוצגים מלמעלה למטה: חרמון 50 למעלה, אילת 1 למטה
-  const שלבים = Array.from({ length: 50 }, (_, i) => 50 - i);
+  // יצירת 50 נקודות שלב לאורך המסלול הגיאוגרפי
+  const stagePoints = Array.from({ length: 50 }, (_, i) => {
+    const stageNum = i + 1;
+    // אינטרפולציה מדרום (אילת Y=92%, X=50%) לצפון (חרמון Y=8%, X=70%)
+    const t = i / 49; // 0 to 1
+    // קו מתפתל דמוי מפת ישראל
+    const y = 92 - t * 84;
+    const wave = Math.sin(t * Math.PI * 3.5) * 22;
+    const x = 50 + wave + (t > 0.6 ? 12 : -8);
+    return {
+      num: stageNum,
+      x,
+      y,
+      unlocked: stageNum <= שלבמפהנוכחי,
+      active: stageNum === שלבמפהנוכחי,
+      stars: כוכבימפה[stageNum] || 0,
+    };
+  });
 
   return (
     <div
       className="fixed inset-0 flex flex-col overflow-hidden text-white select-none"
       style={{
-        background: 'radial-gradient(circle at 50% 15%, #18092e 0%, #0c0417 50%, #030108 100%)',
+        background: 'radial-gradient(ellipse at 50% 20%, #1e093d 0%, #0c021a 50%, #030008 100%)',
         direction: 'rtl',
         fontFamily: '"Varela Round", sans-serif',
       }}
     >
-      {/* 🔮 כותרת עליונה בסגנון ניאון ארקייד / GTA VI */}
-      <div className="relative z-30 flex items-center justify-between px-4 pt-safe-top pt-4 pb-3 border-b border-cyan-500/30 bg-black/70 backdrop-blur-lg shadow-[0_4px_25px_rgba(0,0,0,0.8)]">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => שנהמסך('פתיחה')}
-            className="w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-500/50 flex items-center justify-center text-cyan-300 text-xl font-bold shadow-[0_0_15px_rgba(0,240,255,0.4)] active:scale-90 transition-transform"
-          >
-            ←
-          </button>
-          <div>
-            <h1 className="text-xl font-black bg-gradient-to-r from-cyan-400 via-teal-200 to-yellow-300 bg-clip-text text-transparent flex items-center gap-2">
-              <span>🗺️ מסע ישראלי</span>
-            </h1>
-            <p className="text-[10px] text-cyan-300/70 font-bold">50 שלבים מאילת ועד החרמון</p>
-          </div>
-        </div>
-
-        {/* מונה כוכבים כולל */}
-        <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.3)]">
-          <span className="text-base animate-pulse">⭐</span>
-          <span className="text-amber-300 font-black text-sm">{סךכוכבים}</span>
-          <span className="text-amber-300/50 text-[10px]">/ 150</span>
-        </div>
-      </div>
-
-      {/* 🚀 סרגל ניווט מהיר לאזורים */}
-      <div className="relative z-20 flex gap-2 px-3 py-2 overflow-x-auto no-scrollbar border-b border-white/5 bg-purple-950/40 backdrop-blur-md">
-        {אזורימפה.map((אזור) => (
-          <button
-            key={אזור.מזהה}
-            onClick={() => {
-              const el = document.getElementById(`region-banner-${אזור.מזהה}`);
-              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }}
-            className="flex-shrink-0 px-2.5 py-1 rounded-xl text-xs font-black bg-white/5 border border-white/10 text-white/80 hover:text-white flex items-center gap-1.5 active:scale-95 transition-transform"
-          >
-            <span>{אזור.אייקון}</span>
-            <span className="text-[11px]">{אזור.שם.split(' ')[0]}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* 🗺️ מפת ישראל הגלילה האנכית המפורטת */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 py-8 relative space-y-6"
-        style={{ scrollBehavior: 'smooth' }}
-      >
-        {/* 🌌 רקע מפת ישראל טופוגרפית עם קווי מתאר זוהרים */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-25">
-          <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 1000">
-            {/* קו חוף הים התיכון */}
-            <path
-              d="M 25 100 Q 20 250 22 450 Q 28 650 35 800 Q 40 900 48 980"
-              fill="none"
-              stroke="#00f0ff"
-              strokeWidth="2"
-              strokeDasharray="4 4"
-            />
-            {/* ים כנרת וים המלח */}
-            <ellipse cx="65" cy="220" rx="6" ry="12" fill="none" stroke="#00f0ff" strokeWidth="2" />
-            <path d="M 68 460 Q 65 520 70 580 Q 72 630 68 670" fill="none" stroke="#00f0ff" strokeWidth="3" />
-            {/* קווי גובה וטופוגרפיה סייבר */}
-            <circle cx="50" cy="120" r="40" fill="none" stroke="#99ddff" strokeWidth="0.5" strokeDasharray="3 6" />
-            <circle cx="45" cy="500" r="60" fill="none" stroke="#ffd700" strokeWidth="0.5" strokeDasharray="3 6" />
-            <circle cx="52" cy="850" r="70" fill="none" stroke="#ffaa00" strokeWidth="0.5" strokeDasharray="3 6" />
-          </svg>
-        </div>
-
-        {/* קו ניאון מפותל שמחבר את שלבי המפה */}
-        <div className="absolute top-12 bottom-12 left-1/2 -translate-x-1/2 w-2.5 bg-gradient-to-b from-cyan-400 via-fuchsia-500 to-amber-400 opacity-50 blur-[2px] pointer-events-none rounded-full" />
-
-        {אזורימפה.slice().reverse().map((אזור) => {
-          const שלביהאזור = שלבים.filter(
-            (s) => s >= אזור.שלבטווח[0] && s <= אזור.שלבטווח[1]
-          );
-
-          return (
-            <div
-              key={אזור.מזהה}
-              id={`region-banner-${אזור.מזהה}`}
-              className="relative space-y-5 rounded-3xl p-3 border border-white/5 overflow-hidden"
-              style={{
-                background: `linear-gradient(180deg, ${אזור.צבעניאון}12 0%, rgba(10,4,20,0.6) 100%)`,
-              }}
-            >
-              {/* 🏙️ באנר אזור גיאוגרפי עם עיצוב GTA VI */}
-              <div className="flex items-center justify-center my-4">
+      {/* 🔮 1. סרגל עליון זוהר (HUD) בדיוק כמו בתמונה */}
+      <div className="relative z-30 px-3 pt-safe-top pt-3 pb-2 border-b border-purple-500/20 bg-black/60 backdrop-blur-xl">
+        <div className="flex items-center justify-between">
+          {/* מונה כוכבים ומד התקדמות */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-purple-950/80 border border-purple-400/40 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+            <span className="text-cyan-300 text-lg drop-shadow-[0_0_8px_#00f0ff]">⭐</span>
+            <div className="flex flex-col">
+              <span className="text-cyan-300 text-xs font-black leading-none">
+                {סךכוכבים}/150
+              </span>
+              <div className="w-14 h-1.5 bg-black/50 rounded-full mt-1 overflow-hidden border border-cyan-500/30">
                 <div
-                  className="px-5 py-2.5 rounded-2xl border-2 shadow-2xl flex items-center gap-3 backdrop-blur-xl"
-                  style={{
-                    backgroundColor: 'rgba(18, 7, 36, 0.9)',
-                    borderColor: אזור.צבעניאון,
-                    boxShadow: `0 0 25px ${אזור.צבעניאון}45`,
-                  }}
-                >
-                  <span className="text-2xl">{אזור.אייקון}</span>
-                  <div>
-                    <h3 className="font-black text-sm tracking-wide" style={{ color: אזור.צבעניאון }}>
-                      {אזור.שם}
-                    </h3>
-                    <p className="text-[10px] text-white/50">{אזור.תיאור}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* גריד שלבים מפותל ומרהיב */}
-              <div className="flex flex-col items-center gap-4 max-w-sm mx-auto">
-                {שלביהאזור.map((מספרשלב, idx) => {
-                  const נעול = מספרשלב > שלבמפהנוכחי;
-                  const נוכחי = מספרשלב === שלבמפהנוכחי;
-                  const כוכבים = כוכבימפה[מספרשלב] || 0;
-                  // זיגזג קל למראה שביל מפותל
-                  const offset = idx % 3 === 0 ? 'translate-x-6' : idx % 3 === 1 ? '-translate-x-6' : 'translate-x-0';
-
-                  return (
-                    <motion.div
-                      key={מספרשלב}
-                      id={`stage-node-${מספרשלב}`}
-                      className={`relative ${offset} transition-transform`}
-                    >
-                      <motion.button
-                        whileHover={!נעול ? { scale: 1.1 } : {}}
-                        whileTap={!נעול ? { scale: 0.92 } : {}}
-                        onClick={() => !נעול && handleSelectStage(מספרשלב)}
-                        disabled={נעול}
-                        className={`relative w-20 h-20 rounded-3xl border-2 flex flex-col items-center justify-center transition-all ${
-                          נעול
-                            ? 'bg-black/50 border-white/10 text-white/25 cursor-not-allowed shadow-none'
-                            : נוכחי
-                            ? 'bg-gradient-to-tr from-cyan-600 via-purple-600 to-fuchsia-600 border-cyan-300 text-white shadow-[0_0_30px_rgba(0,240,255,0.8)] animate-pulse'
-                            : 'bg-gradient-to-br from-purple-900/80 to-indigo-950/80 border-purple-400/50 text-white shadow-[0_0_15px_rgba(168,85,247,0.3)]'
-                        }`}
-                      >
-                        {נעול ? (
-                          <span className="text-xl">🔒</span>
-                        ) : (
-                          <>
-                            <span className="text-lg font-black tracking-tight">{מספרשלב}</span>
-                            <div className="flex gap-0.5 mt-0.5 text-[10px]">
-                              <span className={כוכבים >= 1 ? 'text-amber-300 drop-shadow-[0_0_4px_#fbbf24]' : 'text-white/20'}>⭐</span>
-                              <span className={כוכבים >= 2 ? 'text-amber-300 drop-shadow-[0_0_4px_#fbbf24]' : 'text-white/20'}>⭐</span>
-                              <span className={כוכבים >= 3 ? 'text-amber-300 drop-shadow-[0_0_4px_#fbbf24]' : 'text-white/20'}>⭐</span>
-                            </div>
-                          </>
-                        )}
-
-                        {/* תגית "שחק עכשיו" על השלב הפעיל */}
-                        {נוכחי && (
-                          <span className="absolute -bottom-2 bg-yellow-400 text-black text-[9px] font-black px-2 py-0.5 rounded-full shadow-[0_0_10px_#fde047]">
-                            שחק! ⚡
-                          </span>
-                        )}
-                      </motion.button>
-                    </motion.div>
-                  );
-                })}
+                  className="h-full bg-gradient-to-r from-cyan-400 to-fuchsia-400"
+                  style={{ width: `${Math.min(100, (סךכוכבים / 150) * 100)}%` }}
+                />
               </div>
             </div>
-          );
-        })}
-      </div>
+          </div>
 
-      {/* 🚀 כפתור קבוע תחתון: שחק את השלב הנוכחי מיד */}
-      <div className="relative z-30 p-3 bg-black/80 backdrop-blur-md border-t border-white/10">
-        <button
-          onClick={() => handleSelectStage(שלבמפהנוכחי)}
-          className="w-full py-3.5 rounded-2xl font-black text-base text-black bg-gradient-to-r from-cyan-400 via-teal-300 to-yellow-300 shadow-[0_0_25px_rgba(0,240,255,0.6)] active:scale-95 transition-all flex items-center justify-center gap-2"
-        >
-          <span>▶️</span>
-          <span>שחק שלב {שלבמפהנוכחי} (השלב הפעיל שלך)</span>
-        </button>
-      </div>
+          {/* כותרת קשת ניאון "מסע ישראלי - מפת השלבים" */}
+          <div className="text-center">
+            <h1 className="text-lg sm:text-xl font-black tracking-wider text-cyan-300 drop-shadow-[0_0_12px_#00f0ff] leading-none">
+              מסע ישראלי
+            </h1>
+            <p className="text-[10px] text-white/80 font-bold tracking-widest mt-0.5">
+              מפת השלבים
+            </p>
+          </div>
 
-      {/* 🪟 מודאל בחירת שלב ומידע */}
-      <AnimatePresence>
-        {שלבנבחר && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/85 backdrop-blur-md"
-            onClick={() => setשלבנבחר(null)}
-          >
-            <motion.div
-              initial={{ y: 50, scale: 0.95 }}
-              animate={{ y: 0, scale: 1 }}
-              exit={{ y: 50, scale: 0.95 }}
-              className="w-full max-w-sm rounded-3xl p-6 border-2 border-cyan-500/50 shadow-[0_0_40px_rgba(0,240,255,0.4)] space-y-4"
-              style={{
-                background: 'linear-gradient(160deg, #1c0a38 0%, #0d041c 100%)',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">{שלבנבחר.אייקוןאזור}</span>
-                  <div>
-                    <h3 className="font-black text-xl text-white">שלב {שלבנבחר.מספרשלב}</h3>
-                    <p className="text-xs text-cyan-300 font-bold">{שלבנבחר.שםאזור}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setשלבנבחר(null)}
-                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white text-sm"
-                >
-                  ✕
-                </button>
+          {/* פרטי משתמש ומטבעות */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-300 text-xs font-black">
+              <span>🪙</span>
+              <span>{מטבעות}</span>
+            </div>
+
+            {/* פרופיל משתמש קטן */}
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-purple-900/60 border border-purple-400/40">
+              <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-cyan-500 to-fuchsia-500 flex items-center justify-center text-xs font-bold text-black">
+                👤
               </div>
+              <div className="text-right leading-none hidden xs:block">
+                <div className="text-[9px] text-white/60">User: {שםשחקן.split(' ')[0]}</div>
+                <div className="text-[10px] font-black text-cyan-300">Lvl: {שלבמפהנוכחי}</div>
+              </div>
+              <div className="text-rose-400 font-black text-xs flex items-center gap-0.5">
+                <span>❤️</span>
+                <span>{לבבות}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs text-white/80">
-                <div className="flex justify-between">
-                  <span className="text-white/50">🎯 יעד חיבורים:</span>
-                  <span className="font-bold text-cyan-300">{שלבנבחר.יעדפגיעות} ביטויים</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">⚡ מהירות מגנט:</span>
-                  <span className="font-bold text-yellow-300">{שלבנבחר.מהירותבסיס}ms</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/50">⭐ כוכבים שנצברו:</span>
-                  <span className="font-bold text-amber-300">
-                    {'⭐'.repeat(כוכבימפה[שלבנבחר.מספרשלב] || 0) || 'טרם הושלם'}
+      {/* 🗺️ 2. מפת ישראל גרפית ורטיקלית מפותלת (SVG Canvas) */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto relative no-scrollbar"
+        style={{ scrollBehavior: 'smooth' }}
+      >
+        <div className="relative w-full max-w-md mx-auto min-h-[1400px] py-10 px-4">
+          {/* מפת רקע וקטורית של ישראל בסגנון ניאון סייברפאנק */}
+          <svg
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            viewBox="0 0 400 1400"
+            preserveAspectRatio="none"
+          >
+            {/* רשת קווי מתאר עתידנית */}
+            <defs>
+              <pattern id="cyberGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(168,85,247,0.06)" strokeWidth="1" />
+              </pattern>
+              {/* פילטר זוהר חזק */}
+              <filter id="neonGlowCyan" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="6" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+              <filter id="neonGlowFuchsia" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="6" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+
+            <rect width="400" height="1400" fill="url(#cyberGrid)" />
+
+            {/* קווי גבולות וכבישי ישראל בסגול/פוקסיה זוהר */}
+            <g stroke="#d946ef" strokeWidth="1.5" opacity="0.35" fill="none">
+              {/* קו חוף ים תיכון */}
+              <path d="M 80 120 Q 70 300 90 550 Q 110 800 150 1050 L 190 1300" strokeWidth="2.5" stroke="#00f0ff" opacity="0.6" />
+              {/* גבול מזרחי וירדן */}
+              <path d="M 310 100 Q 290 320 280 600 Q 290 900 210 1300" />
+              {/* כבישי רוחב ניאון */}
+              <path d="M 85 300 Q 180 320 290 330" strokeDasharray="3 3" />
+              <path d="M 95 600 Q 190 620 280 640" strokeDasharray="3 3" />
+              <path d="M 120 900 Q 190 910 260 920" strokeDasharray="3 3" />
+            </g>
+
+            {/* גופי מים זוהרים: כנרת וים המלח */}
+            {/* ים כנרת */}
+            <ellipse cx="260" cy="280" rx="14" ry="22" fill="rgba(0,240,255,0.25)" stroke="#00f0ff" strokeWidth="2" filter="url(#neonGlowCyan)" />
+            {/* ים המלח */}
+            <path d="M 270 580 Q 260 660 275 760 Q 285 700 270 580 Z" fill="rgba(0,240,255,0.25)" stroke="#00f0ff" strokeWidth="2" filter="url(#neonGlowCyan)" />
+
+            {/* מסלול האנרגיה הציאן הראשי שמחבר את כל השלבים */}
+            <path
+              d="M 200 1300 C 160 1100, 240 900, 160 700 C 90 520, 220 350, 280 120"
+              fill="none"
+              stroke="#00f0ff"
+              strokeWidth="6"
+              strokeLinecap="round"
+              filter="url(#neonGlowCyan)"
+            />
+            <path
+              d="M 200 1300 C 160 1100, 240 900, 160 700 C 90 520, 220 350, 280 120"
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth="2"
+              strokeDasharray="8 6"
+              opacity="0.8"
+            />
+          </svg>
+
+          {/* 🏙️ כרטיסיות אתרי ציון ישראליים מרהיבים (אילת, ירושלים, ת"א, חיפה, חרמון) */}
+          {אתריציון.map((אתר) => (
+            <div
+              key={אתר.id}
+              className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
+              style={{ top: `${(אתר.yPercent / 100) * 1350}px`, left: `${אתר.xPercent}%` }}
+            >
+              <motion.div
+                whileHover={{ scale: 1.08 }}
+                className="px-3.5 py-2 rounded-2xl border-2 flex items-center gap-2.5 backdrop-blur-md shadow-2xl"
+                style={{
+                  backgroundColor: 'rgba(15, 5, 30, 0.88)',
+                  borderColor: אתר.color,
+                  boxShadow: `0 0 20px ${אתר.color}60`,
+                }}
+              >
+                <span className="text-2xl drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]">{אתר.icon}</span>
+                <div className="text-right leading-tight">
+                  <h3 className="font-black text-xs tracking-wide" style={{ color: אתר.color }}>
+                    {אתר.name}
+                  </h3>
+                  <span className="text-[9px] bg-black/60 px-1.5 py-0.5 rounded-full text-white/70 font-bold">
+                    שלב {אתר.stage}
                   </span>
                 </div>
-              </div>
+              </motion.div>
+            </div>
+          ))}
 
-              <button
-                onClick={handleStartStage}
-                className="w-full py-4 rounded-2xl font-black text-lg text-black bg-gradient-to-r from-cyan-400 via-teal-300 to-yellow-300 shadow-[0_0_25px_rgba(0,240,255,0.7)] active:scale-95 transition-all flex items-center justify-center gap-2"
+          {/* 🎯 צמתי השלבים לאורך שביל האנרגיה */}
+          {stagePoints.map((pt) => {
+            const isSelected = שלבנבחר.מספרשלב === pt.num;
+            return (
+              <div
+                key={pt.num}
+                id={`stage-node-${pt.num}`}
+                className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
+                style={{ top: `${(pt.y / 100) * 1350}px`, left: `${pt.x}%` }}
               >
-                <span>▶️</span>
-                <span>שחק שלב {שלבנבחר.מספרשלב}!</span>
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                {/* בועת שלב פעיל זוהרת (בדיוק כמו כרטיסיית שלב 28 בתמונה!) */}
+                {isSelected ? (
+                  <motion.div
+                    initial={{ scale: 0.8 }}
+                    animate={{ scale: 1 }}
+                    className="relative flex flex-col items-center cursor-pointer"
+                    onClick={() => setשלבנבחר(קבלשלבמפה(pt.num))}
+                  >
+                    <div className="px-4 py-2 rounded-2xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 border-2 border-cyan-300 shadow-[0_0_25px_rgba(0,240,255,0.9)] text-center">
+                      <div className="flex items-center justify-center gap-1 text-[10px] text-amber-300">
+                        <span>⭐</span>
+                        <span>⭐</span>
+                        <span>⭐</span>
+                      </div>
+                      <div className="text-xs font-black text-white whitespace-nowrap">
+                        שלב {pt.num}
+                      </div>
+                    </div>
+                    {/* חץ מצביע לנקודה */}
+                    <div className="w-0 h-0 border-l-6 border-r-6 border-t-6 border-t-cyan-300 -mt-0.5" />
+                    {/* עיגול השלב המרכזי */}
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-cyan-400 to-fuchsia-500 border-2 border-white flex items-center justify-center text-white font-black text-sm shadow-[0_0_20px_#00f0ff] animate-pulse mt-1">
+                      ⭐
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.button
+                    whileTap={pt.unlocked ? { scale: 0.88 } : {}}
+                    onClick={() => pt.unlocked && setשלבנבחר(קבלשלבמפה(pt.num))}
+                    disabled={!pt.unlocked}
+                    className={`w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-black transition-all ${
+                      pt.unlocked
+                        ? 'bg-gradient-to-tr from-indigo-900 to-cyan-900 border-cyan-400 text-cyan-200 shadow-[0_0_12px_rgba(0,240,255,0.5)]'
+                        : 'bg-black/70 border-white/10 text-white/20 cursor-not-allowed'
+                    }`}
+                  >
+                    {pt.unlocked ? (
+                      pt.num
+                    ) : (
+                      <span className="text-[10px]">🔒</span>
+                    )}
+                  </motion.button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 🚀 3. כפתור פליי ענק תחתון "▶️ שחק שלב X" בדיוק כמו בתמונה! */}
+      <div className="relative z-30 p-3 bg-black/85 backdrop-blur-xl border-t border-purple-500/30">
+        <div className="max-w-sm mx-auto space-y-2">
+          <button
+            onClick={() => handleStartStage(שלבנבחר.מספרשלב)}
+            className="w-full py-4 rounded-2xl font-black text-xl text-black flex items-center justify-center gap-3 active:scale-95 transition-all shadow-[0_0_35px_rgba(0,240,255,0.85)] border-2 border-cyan-200"
+            style={{
+              background: 'linear-gradient(135deg, #00f0ff 0%, #38bdf8 50%, #818cf8 100%)',
+              fontFamily: '"Varela Round", sans-serif',
+            }}
+          >
+            <span className="text-2xl">▶️</span>
+            <span>שחק שלב {שלבנבחר.מספרשלב}</span>
+          </button>
+        </div>
+
+        {/* סרגל ניווט תחתון (מפה 🗺️, חנות 🛒, פרופיל 👤, הגדרות ⚙️) */}
+        <div className="flex items-center justify-around pt-3 border-t border-white/5 max-w-sm mx-auto text-xl">
+          <button
+            className="text-cyan-400 drop-shadow-[0_0_10px_#00f0ff] p-1.5 flex flex-col items-center text-[10px] font-bold"
+          >
+            <span>🗺️</span>
+            <span>מפה</span>
+          </button>
+          <button
+            onClick={() => שנהמסך('חנות')}
+            className="text-white/50 hover:text-white p-1.5 flex flex-col items-center text-[10px] font-bold"
+          >
+            <span>🛒</span>
+            <span>חנות</span>
+          </button>
+          <button
+            onClick={() => שנהמסך('שיאים')}
+            className="text-white/50 hover:text-white p-1.5 flex flex-col items-center text-[10px] font-bold"
+          >
+            <span>🏆</span>
+            <span>שיאים</span>
+          </button>
+          <button
+            onClick={() => שנהמסך('הגדרות')}
+            className="text-white/50 hover:text-white p-1.5 flex flex-col items-center text-[10px] font-bold"
+          >
+            <span>⚙️</span>
+            <span>הגדרות</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
