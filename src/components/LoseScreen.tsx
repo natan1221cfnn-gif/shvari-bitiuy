@@ -218,25 +218,17 @@ export function LoseScreen() {
           transition={{ delay: 0.5 }}
           className="w-full flex flex-col gap-2.5"
         >
-          {/* 💬 אתגר חבר בוואטסאפ */}
+          {/* 📤 שתף לחברים (Generic Native Share) */}
           <button
-            onClick={handleWhatsAppChallenge}
+            onClick={handleShare}
             className="w-full py-3.5 rounded-2xl font-bold text-base text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg"
             style={{
               fontFamily: '"Varela Round"',
-              background: 'linear-gradient(135deg, #25D366, #128C7E)',
+              background: 'linear-gradient(135deg, #6366f1, #a855f7)',
             }}
           >
-            <span>💬 אתגר חבר בוואטסאפ!</span>
-          </button>
-
-          {/* שתף כללי */}
-          <button
-            onClick={handleShare}
-            className="w-full py-3 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 bg-white/10 border border-white/20"
-            style={{ fontFamily: '"Varela Round"' }}
-          >
-            <span>{copied ? '✅ הועתק!' : '📲 שתף תוצאה'}</span>
+            <span>📤</span>
+            <span>{copied ? '✅ הקישור הועתק!' : 'שתף תוצאה לחברים'}</span>
           </button>
 
           <button

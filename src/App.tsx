@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGameStore } from './store/gameStore';
 import { שלחשיאלענן } from './data/cloudLeaderboard';
@@ -10,6 +10,7 @@ import { LeaderboardScreen } from './components/LeaderboardScreen';
 import { InstructionsScreen } from './components/InstructionsScreen';
 import { ShopScreen } from './components/ShopScreen';
 import { LuckyWheelModal } from './components/LuckyWheelModal';
+import { DuelScreen } from './components/DuelScreen';
 
 const מעברדף = {
   initial: { opacity: 0, scale: 0.97 },
@@ -19,7 +20,18 @@ const מעברדף = {
 };
 
 export function App() {
-  const { מסךפעיל, שיאאישי, שיאים, שםשחקן, הגדרות } = useGameStore();
+  const { מסךפעיל, שנהמסך, שיאאישי, שיאים, שםשחקן, הגדרות } = useGameStore();
+  const [urlRoomId, setUrlRoomId] = useState<string | null>(null);
+
+  // בדיקת קישור כניסה לחדר דו-קרב (למשל: ?room=4821)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const room = params.get('room');
+    if (room) {
+      setUrlRoomId(room);
+      שנהמסך('דו-קרב');
+    }
+  }, [שנהמסך]);
 
   // סנכרון אוטומטי של השיא המקומי הגבוה ביותר לענן
   useEffect(() => {
@@ -77,6 +89,11 @@ export function App() {
         {מסךפעיל === 'גלגל' && (
           <motion.div key="גלגל" {...מעברדף}>
             <LuckyWheelModal />
+          </motion.div>
+        )}
+        {מסךפעיל === 'דו-קרב' && (
+          <motion.div key="דו-קרב" {...מעברדף}>
+            <DuelScreen initialRoomId={urlRoomId} />
           </motion.div>
         )}
       </AnimatePresence>

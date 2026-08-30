@@ -302,6 +302,22 @@ export function StartScreen() {
           </button>
         </div>
 
+        {/* ⚔️ כפתור דו-קרב אונליין (1 על 1) */}
+        <button
+          onClick={() => שנהמסך('דו-קרב')}
+          className="w-full py-3 rounded-2xl font-bold text-white flex items-center justify-center gap-2 active:scale-95 transition-transform text-sm shadow-xl border border-indigo-400/40"
+          style={{
+            fontFamily: '"Varela Round"',
+            background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%)',
+          }}
+        >
+          <span className="text-lg">⚔️</span>
+          <span>דו-קרב אונליין (1 על 1)</span>
+          <span className="text-[10px] bg-yellow-400 text-purple-950 px-2 py-0.5 rounded-full font-bold">
+            חדש! 🔥
+          </span>
+        </button>
+
         {/* כפתורים משניים */}
         <div className="flex gap-2">
           <button
