@@ -217,14 +217,14 @@ export function AdminScreen() {
 
       {/* 📊 תוכן פאנל הניהול */}
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
-        {/* 🌐 מונה מבקרים גלובלי בזמן אמת */}
+        {/* 🌐 מונה מבקרים גלובלי אמיתי בזמן אמת */}
         <div className="p-4 rounded-3xl bg-gradient-to-r from-blue-950/40 via-purple-950/40 to-indigo-950/40 border-2 border-cyan-400/40 shadow-[0_0_30px_rgba(0,240,255,0.2)]">
           <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-3">
             <div className="flex items-center gap-2.5">
               <span className="text-2xl animate-pulse">🌐</span>
               <div>
-                <h3 className="font-black text-sm text-cyan-300">מונה מבקרים פעיל בזמן אמת</h3>
-                <p className="text-[10px] text-white/60 font-bold">מעקב כניסות חי ומתעדכן תמיד בענן</p>
+                <h3 className="font-black text-sm text-cyan-300">מונה מבקרים 100% אמיתי בלייב</h3>
+                <p className="text-[10px] text-white/60 font-bold">ספירה אמינה וישירה של כל כניסת מכשיר לאתר</p>
               </div>
             </div>
             <button
@@ -239,13 +239,13 @@ export function AdminScreen() {
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-center">
             <div className="p-3 rounded-2xl bg-black/50 border border-cyan-500/30">
-              <div className="text-[11px] text-white/60 font-bold">👥 סך כל המבקרים</div>
+              <div className="text-[11px] text-white/60 font-bold">👥 סך כל המבקרים בפועל</div>
               <div className="text-2xl font-black text-cyan-300 mt-1 drop-shadow-[0_0_10px_#00f0ff]">
                 {נתונימבקרים.סךהכל.toLocaleString('he-IL')}
               </div>
-              <span className="text-[9px] text-emerald-400 font-bold">עולה תמיד 📈</span>
+              <span className="text-[9px] text-cyan-300/70 font-bold">כניסות אמיתיות</span>
             </div>
 
             <div className="p-3 rounded-2xl bg-black/50 border border-purple-500/30">
@@ -253,15 +253,15 @@ export function AdminScreen() {
               <div className="text-2xl font-black text-purple-300 mt-1 drop-shadow-[0_0_10px_#c084fc]">
                 {נתונימבקרים.היום.toLocaleString('he-IL')}
               </div>
-              <span className="text-[9px] text-purple-300/80 font-bold">היום פעיל 🔥</span>
+              <span className="text-[9px] text-purple-300/80 font-bold">היום</span>
             </div>
 
-            <div className="p-3 rounded-2xl bg-black/50 border border-emerald-500/30">
-              <div className="text-[11px] text-white/60 font-bold">🟢 מחוברים בלייב</div>
+            <div className="p-3 rounded-2xl bg-black/50 border border-emerald-500/30 col-span-2 sm:col-span-1">
+              <div className="text-[11px] text-white/60 font-bold">🟢 מחוברים ברגע זה</div>
               <div className="text-2xl font-black text-emerald-300 mt-1 drop-shadow-[0_0_10px_#34d399]">
-                {נתונימבקרים.מחובריםעכשיו}
+                {מחוברים}
               </div>
-              <span className="text-[9px] text-emerald-400 font-bold">סשנים חיים ✨</span>
+              <span className="text-[9px] text-emerald-400 font-bold">שחקנים פעילים</span>
             </div>
           </div>
         </div>
