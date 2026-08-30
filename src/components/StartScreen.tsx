@@ -310,6 +310,41 @@ export function StartScreen() {
           🚀 שחק עכשיו!
         </motion.button>
 
+        {/* שורת מצבי הדגל החדשים: 🗺️ מסע ישראלי + 🏛️ מלחמת הערים */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* 🗺️ מסע ישראלי */}
+          <button
+            onClick={() => שנהמסך('מפה')}
+            className="py-3 px-2 rounded-2xl font-black text-white flex items-center justify-center gap-1.5 active:scale-95 transition-all text-xs border border-cyan-400/50 shadow-[0_0_15px_rgba(0,240,255,0.35)]"
+            style={{
+              fontFamily: '"Varela Round"',
+              background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%)',
+            }}
+          >
+            <span className="text-base">🗺️</span>
+            <span>מסע ישראלי</span>
+            <span className="text-[9px] bg-yellow-400 text-black px-1.5 py-0.2 rounded-full font-black">
+              50 שלבים!
+            </span>
+          </button>
+
+          {/* 🏛️ מלחמת הערים */}
+          <button
+            onClick={() => שנהמסך('מלחמת-ערים')}
+            className="py-3 px-2 rounded-2xl font-black text-white flex items-center justify-center gap-1.5 active:scale-95 transition-all text-xs border border-fuchsia-400/50 shadow-[0_0_15px_rgba(217,70,239,0.35)]"
+            style={{
+              fontFamily: '"Varela Round"',
+              background: 'linear-gradient(135deg, #d946ef 0%, #ec4899 50%, #f59e0b 100%)',
+            }}
+          >
+            <span className="text-base">🏛️</span>
+            <span>מלחמת הערים</span>
+            <span className="text-[9px] bg-cyan-400 text-black px-1.5 py-0.2 rounded-full font-black animate-pulse">
+              LIVE
+            </span>
+          </button>
+        </div>
+
         {/* שורת מצבי משחק: 60 שניות טירוף + אתגר יומי */}
         <div className="flex gap-2">
           {/* ⚡ 60 שניות טירוף */}

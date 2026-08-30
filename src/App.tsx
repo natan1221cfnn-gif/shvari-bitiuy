@@ -12,6 +12,9 @@ import { ShopScreen } from './components/ShopScreen';
 import { LuckyWheelModal } from './components/LuckyWheelModal';
 import { DuelScreen } from './components/DuelScreen';
 
+import { IsraelMapScreen } from './components/IsraelMapScreen';
+import { CityBattlesScreen } from './components/CityBattlesScreen';
+
 const מעברדף = {
   initial: { opacity: 0, scale: 0.97 },
   animate: { opacity: 1, scale: 1 },
@@ -109,6 +112,16 @@ export function App() {
         {מסךפעיל === 'דו-קרב' && (
           <motion.div key="דו-קרב" {...מעברדף}>
             <DuelScreen initialRoomId={urlRoomId} />
+          </motion.div>
+        )}
+        {מסךפעיל === 'מפה' && (
+          <motion.div key="מפה" {...מעברדף}>
+            <IsraelMapScreen />
+          </motion.div>
+        )}
+        {מסךפעיל === 'מלחמת-ערים' && (
+          <motion.div key="מלחמת-ערים" {...מעברדף}>
+            <CityBattlesScreen />
           </motion.div>
         )}
       </AnimatePresence>

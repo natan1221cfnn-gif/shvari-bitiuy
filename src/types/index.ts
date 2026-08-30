@@ -15,7 +15,9 @@ export type מסך =
   | 'הוראות'
   | 'חנות'
   | 'גלגל'
-  | 'דו-קרב';
+  | 'דו-קרב'
+  | 'מפה'
+  | 'מלחמת-ערים';
 
 export type סטטוסמשחק =
   | 'ממתין'
@@ -128,4 +130,26 @@ export interface מצבמשחק {
   השתמשבהצלה: boolean;
   זמןטירוףנותר: number;
   גלגלסובבלאחרונה: number;
+  עירשחקן: string;
+  שלבמפהנוכחי: number;
+  כוכבימפה: Record<number, number>; // שלב -> כמות כוכבים (1-3)
+}
+
+export interface עירמידע {
+  id: string;
+  name: string;
+  score: number;
+  players: number;
+  icon: string;
+  title: string;
+}
+
+export interface שלבמפהמידע {
+  מספרשלב: number;
+  שםאזור: string;
+  אייקוןאזור: string;
+  תיאור: string;
+  ביטויים: ביטוי[];
+  יעדפגיעות: number;
+  מהירותבסיס: number;
 }

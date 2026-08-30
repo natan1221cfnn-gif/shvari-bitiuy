@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
+import { StoryCardModal } from './StoryCardModal';
 
 function Confetti() {
   return (
@@ -49,6 +50,7 @@ export function LoseScreen() {
   } = useGameStore();
 
   const [copied, setCopied] = useState(false);
+  const [showStoryModal, setShowStoryModal] = useState(false);
   const שיאחדש = ניקוד >= שיאאישי && ניקוד > 0;
   const הואטירוף = מצבמשחק === 'טירוף';
 
@@ -226,6 +228,19 @@ export function LoseScreen() {
           transition={{ delay: 0.5 }}
           className="w-full flex flex-col gap-2.5"
         >
+          {/* 📸 מחולל כרטיס סטורי ויראלי */}
+          <button
+            onClick={() => setShowStoryModal(true)}
+            className="w-full py-3.5 rounded-2xl font-black text-base text-black flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0_0_20px_rgba(0,240,255,0.5)]"
+            style={{
+              fontFamily: '"Varela Round"',
+              background: 'linear-gradient(135deg, #00f0ff, #3b82f6, #a855f7)',
+            }}
+          >
+            <span>📸</span>
+            <span>צור כרטיס סטורי מעוצב (אינסטה/טיקטוק/וואטסאפ)</span>
+          </button>
+
           {/* 📤 שתף לחברים (Generic Native Share) */}
           <button
             onClick={handleShare}
@@ -236,7 +251,7 @@ export function LoseScreen() {
             }}
           >
             <span>📤</span>
-            <span>{copied ? '✅ הקישור הועתק!' : 'שתף תוצאה לחברים'}</span>
+            <span>{copied ? '✅ הקישור הועתק!' : 'שתף קישור לחברים'}</span>
           </button>
 
           <button
@@ -268,6 +283,17 @@ export function LoseScreen() {
           </button>
         </motion.div>
       </div>
+
+      {/* 📸 מודאל סטורי קארד */}
+      <AnimatePresence>
+        {showStoryModal && (
+          <StoryCardModal
+            onClose={() => setShowStoryModal(false)}
+            ניקודמשחק={ניקוד}
+            ביטוייםשחוברו={הצלחות}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
