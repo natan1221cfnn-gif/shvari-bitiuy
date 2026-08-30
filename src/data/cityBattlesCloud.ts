@@ -15,6 +15,10 @@ export const עריברירתמחדל: עירמידע[] = [
   { id: 'batyam', name: 'בת ים', score: 2980300, players: 1390, icon: '🏖️', title: 'מלכי החוף' },
   { id: 'ramatgan', name: 'רמת גן', score: 2850100, players: 1280, icon: '💎', title: 'מגדלי הברזל' },
   { id: 'eilat', name: 'אילת', score: 2640800, players: 1120, icon: '🌴', title: 'דרום לוהט' },
+  { id: 'herzliya', name: 'הרצליה', score: 2450000, players: 980, icon: '🚀', title: 'סטארטאפ ניישן' },
+  { id: 'kfasaba', name: 'כפר סבא', score: 2310000, players: 890, icon: '🌳', title: 'העיר הירוקה' },
+  { id: 'ashkelon', name: 'אשקלון', score: 2180000, players: 840, icon: '🛡️', title: 'חומת הדרום' },
+  { id: 'tiberias', name: 'טבריה', score: 1950000, players: 760, icon: '🌊', title: 'פנינת הכנרת' },
 ];
 
 export async function טעןדירוגערים(): Promise<עירמידע[]> {
@@ -32,18 +36,22 @@ export async function טעןדירוגערים(): Promise<עירמידע[]> {
           name: decodeURIComponent(c.name || ''),
           title: decodeURIComponent(c.title || ''),
         }));
-        localStorage.setItem('shvari_city_ranks_cache', JSON.stringify(decoded));
-        return decoded.sort((a, b) => b.score - a.score);
+        
+        // מיזוג עם רשימת ברירת המחדל כדי שאף עיר לא תיעלם לעולם
+        const map = new Map<string, עירמידע>();
+        for (const d of עריברירתמחדל) map.set(d.name, d);
+        for (const c of decoded) {
+          const exist = map.get(c.name);
+          if (exist) {
+            map.set(c.name, { ...exist, score: Math.max(exist.score, c.score), players: Math.max(exist.players, c.players) });
+          } else {
+            map.set(c.name, c);
+          }
+        }
+        const merged = Array.from(map.values()).sort((a, b) => b.score - a.score);
+        localStorage.setItem('shvari_city_ranks_cache', JSON.stringify(merged));
+        return merged;
       }
-    }
-  } catch {
-    /* ignore */
-  }
-
-  try {
-    const cached = localStorage.getItem('shvari_city_ranks_cache');
-    if (cached) {
-      return JSON.parse(cached);
     }
   } catch {
     /* ignore */

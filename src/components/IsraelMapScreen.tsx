@@ -38,6 +38,7 @@ function getPathPosition(stageNum: number) {
 export function IsraelMapScreen() {
   const { שנהמסך, שלבמפהנוכחי, כוכבימפה, התחלשלבמפה, מטבעות, שםשחקן, לבבות } = useGameStore();
   const [שלבנבחר, setשלבנבחר] = useState<שלבמפהמידע>(קבלשלבמפה(שלבמפהנוכחי || 1));
+  const [מודאלשלבפתוח, setמודאלשלבפתוח] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const סךכוכבים = Object.values(כוכבימפה).reduce((a, b) => a + b, 0);
@@ -158,7 +159,10 @@ export function IsraelMapScreen() {
                     initial={{ scale: 0.8 }}
                     animate={{ scale: 1 }}
                     className="relative flex flex-col items-center cursor-pointer"
-                    onClick={() => setשלבנבחר(קבלשלבמפה(st.num))}
+                    onClick={() => {
+                      setשלבנבחר(קבלשלבמפה(st.num));
+                      setמודאלשלבפתוח(true);
+                    }}
                   >
                     <div className="px-3.5 py-1.5 rounded-2xl bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 border-2 border-cyan-300 shadow-[0_0_25px_rgba(0,240,255,0.95)] text-center">
                       <div className="flex items-center justify-center gap-0.5 text-[9px] text-amber-300">
@@ -181,7 +185,12 @@ export function IsraelMapScreen() {
                   /* צומת שלב רגיל (פתוח או נעול) */
                   <motion.button
                     whileTap={st.unlocked ? { scale: 0.88 } : {}}
-                    onClick={() => st.unlocked && setשלבנבחר(קבלשלבמפה(st.num))}
+                    onClick={() => {
+                      if (st.unlocked) {
+                        setשלבנבחר(קבלשלבמפה(st.num));
+                        setמודאלשלבפתוח(true);
+                      }
+                    }}
                     disabled={!st.unlocked}
                     className={`w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-black transition-all ${
                       st.unlocked
@@ -249,6 +258,74 @@ export function IsraelMapScreen() {
           </button>
         </div>
       </div>
+
+      {/* 🪟 מודאל פרטי שלב ויעדים */}
+      <AnimatePresence>
+        {מודאלשלבפתוח && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+            onClick={() => setמודאלשלבפתוח(false)}
+          >
+            <motion.div
+              initial={{ y: 50, scale: 0.95 }}
+              animate={{ y: 0, scale: 1 }}
+              exit={{ y: 50, scale: 0.95 }}
+              className="w-full max-w-sm rounded-3xl p-6 border-2 border-cyan-400/60 shadow-[0_0_50px_rgba(0,240,255,0.5)] space-y-4"
+              style={{
+                background: 'linear-gradient(160deg, #1c0a38 0%, #0d041c 100%)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{שלבנבחר.אייקוןאזור}</span>
+                  <div>
+                    <h3 className="font-black text-xl text-white">שלב {שלבנבחר.מספרשלב}</h3>
+                    <p className="text-xs text-cyan-300 font-bold">{שלבנבחר.שםאזור}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setמודאלשלבפתוח(false)}
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white text-sm"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs text-white/80">
+                <div className="flex justify-between">
+                  <span className="text-white/50">🎯 יעד חיבורים:</span>
+                  <span className="font-bold text-cyan-300">{שלבנבחר.יעדפגיעות} ביטויים</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">⚡ מהירות מגנט:</span>
+                  <span className="font-bold text-yellow-300">{שלבנבחר.מהירותבסיס}ms</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">⭐ כוכבים שנצברו:</span>
+                  <span className="font-bold text-amber-300">
+                    {'⭐'.repeat(כוכבימפה[שלבנבחר.מספרשלב] || 0) || 'טרם הושלם'}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setמודאלשלבפתוח(false);
+                  handleStartStage(שלבנבחר.מספרשלב);
+                }}
+                className="w-full py-4 rounded-2xl font-black text-lg text-black bg-gradient-to-r from-cyan-400 via-teal-300 to-yellow-300 shadow-[0_0_25px_rgba(0,240,255,0.7)] active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <span>▶️</span>
+                <span>שחק שלב {שלבנבחר.מספרשלב}!</span>
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
