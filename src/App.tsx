@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGameStore } from './store/gameStore';
-import { שלחשיאלענן } from './data/cloudLeaderboard';
+import { טעןשיאיםמהענן, שלחשיאלענן } from './data/cloudLeaderboard';
 import { StartScreen } from './components/StartScreen';
 import { GameScreen } from './components/GameScreen';
 import { LoseScreen } from './components/LoseScreen';
@@ -33,8 +33,23 @@ export function App() {
     }
   }, [שנהמסך]);
 
-  // סנכרון אוטומטי של השיא המקומי הגבוה ביותר לענן
+  // סנכרון אוטומטי דו-כיווני של שיאי ענן
   useEffect(() => {
+    // 1. טעינת שיאים מהענן ועדכון מקומי אם השם תואם לשיא ענן
+    טעןשיאיםמהענן().then((scores) => {
+      const myCloud = scores.find((s) => s.שם === שםשחקן);
+      if (myCloud && myCloud.ניקוד > שיאאישי) {
+        localStorage.setItem('שברי-ביטוי-שיא', String(myCloud.ניקוד));
+        const מעודכן = [myCloud, ...שיאים.filter((s) => s.ניקוד !== myCloud.ניקוד)];
+        localStorage.setItem('שברי-ביטוי-שיאים', JSON.stringify(מעודכן));
+        useGameStore.setState({
+          שיאאישי: myCloud.ניקוד,
+          שיאים: מעודכן,
+        });
+      }
+    });
+
+    // 2. שליחת שיא מקומי חדש לענן אם קיים
     if (שיאאישי > 0) {
       const השיאהטובביותר = שיאים[0] || {
         שם: שםשחקן,
