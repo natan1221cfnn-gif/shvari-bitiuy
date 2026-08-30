@@ -113,7 +113,17 @@ export async function טעןשיאיםמהענן(): Promise<שיא[]> {
       const json = await res.json();
       const scores = json?.data?.scores;
       if (Array.isArray(scores) && scores.length > 0) {
-        const filtered = סנןונקהכפילויות(scores);
+        const decoded = scores.map((s: any) => {
+          let name = s.שם || 'שחקן';
+          try {
+            name = decodeURIComponent(name);
+          } catch {}
+          return {
+            ...s,
+            שם: name,
+          };
+        });
+        const filtered = סנןונקהכפילויות(decoded);
         localStorage.setItem('shvari_cached_cloud_scores', JSON.stringify(filtered));
         return filtered;
       }
@@ -140,12 +150,23 @@ export async function שמוררשימתשיאיםמלאהבענן(רשימה: �
     const מסודר = [...רשימה].sort((a, b) => (b.ניקוד || 0) - (a.ניקוד || 0));
     localStorage.setItem('shvari_cached_cloud_scores', JSON.stringify(מסודר));
 
+    // קידוד בטוח של כל התווים בעברית למניעת שגיאת 500 ב-REST API
+    const encoded = מסודר.map((s) => ({
+      ...s,
+      שם: encodeURIComponent(s.שם || 'שחקן'),
+      רמה: s.רמה || 'מטורף',
+      מצב: s.מצב || 'רגיל',
+      תאריך: s.תאריך || new Date().toLocaleDateString('he-IL'),
+      ניקוד: Number(s.ניקוד) || 0,
+      מטבעות: Number(s.מטבעות) || 100,
+    }));
+
     const res = await fetch(CLOUD_ENDPOINT, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: 'shvari_real_scores_production_v1',
-        data: { scores: מסודר },
+        data: { scores: encoded },
       }),
     });
     return res.ok;
@@ -165,12 +186,22 @@ export async function שלחשיאלענן(שיאחדש: שיא): Promise<void> 
     const מעודכן = סנןונקהכפילויות([...קיימים, שיאחדש]);
     localStorage.setItem('shvari_cached_cloud_scores', JSON.stringify(מעודכן));
 
+    const encoded = מעודכן.map((s) => ({
+      ...s,
+      שם: encodeURIComponent(s.שם || 'שחקן'),
+      רמה: s.רמה || 'מטורף',
+      מצב: s.מצב || 'רגיל',
+      תאריך: s.תאריך || new Date().toLocaleDateString('he-IL'),
+      ניקוד: Number(s.ניקוד) || 0,
+      מטבעות: Number(s.מטבעות) || 100,
+    }));
+
     await fetch(CLOUD_ENDPOINT, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: 'shvari_real_scores_production_v1',
-        data: { scores: מעודכן },
+        data: { scores: encoded },
       }),
     });
   } catch {
