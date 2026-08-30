@@ -5,6 +5,8 @@ import { useSound } from '../hooks/useSound';
 import { useHaptic } from '../hooks/useHaptic';
 import { MagnetBlock } from './MagnetBlock';
 import { MascotMagneti } from './MascotMagneti';
+import { MapStageVictoryModal } from './MapStageVictoryModal';
+import { קבלשלבמפה } from '../data/israelMapData';
 import { קטגוריותסמל } from '../types';
 
 const הודעותהצלחה = ['מצוין! 🎯', 'על הנקודה! ⚡', 'מדהים! 🔥', 'כן כן כן! 💥', 'בדיוק! ✨', 'ממגנט! 🧲', 'וואו! 🌟'];
@@ -69,6 +71,7 @@ export function GameScreen() {
   const [rings, setRings] = useState<number[]>([]);
   const [floatingText, setFloatingText] = useState<{ id: number; text: string; isGold?: boolean } | null>(null);
   const [showLevelUp, setShowLevelUp] = useState(false);
+  const [showVictoryModal, setShowVictoryModal] = useState(false);
   const [coinsPop, setCoinsPop] = useState<number | null>(null);
 
   const animRef = useRef<number>(0);
@@ -305,6 +308,19 @@ export function GameScreen() {
       רטטהצלחה();
       if (מכפילחדש > 1) רטטקומבו(מכפילחדש);
       triggerJuice('success');
+
+      // 🗺️ בדיקת סיום שלב במפת ישראל
+      const מידעשלב = קבלשלבמפה(שלב);
+      const סךהצלחותמעודכן = הצלחות + 1;
+      if (סךהצלחותמעודכן >= מידעשלב.יעדפגיעות && !הואטירוף) {
+        const { שמורכוכבישלב, עדכןשלבמפה, שלבמפהנוכחי, לבבות: currLives } = useGameStore.getState();
+        const כוכבים = currLives >= 3 ? 3 : currLives >= 2 ? 2 : 1;
+        שמורכוכבישלב(שלב, כוכבים);
+        עדכןשלבמפה(Math.max(שלבמפהנוכחי, שלב + 1));
+        setTimeout(() => {
+          setShowVictoryModal(true);
+        }, 500);
+      }
       return;
     }
 
@@ -695,6 +711,26 @@ export function GameScreen() {
               </button>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 🏆 מודאל ניצחון שלב במפת ישראל */}
+      <AnimatePresence>
+        {showVictoryModal && (
+          <MapStageVictoryModal
+            מספרשלב={שלב}
+            לבבותשנותרו={לבבות}
+            ניקודשלב={ניקוד}
+            onNextStage={() => {
+              setShowVictoryModal(false);
+              useGameStore.getState().התחלשלבמפה(שלב + 1);
+            }}
+            onBackToMap={() => {
+              setShowVictoryModal(false);
+              useGameStore.getState().אפסמשחק();
+              שנהמסך('מפה');
+            }}
+          />
         )}
       </AnimatePresence>
     </motion.div>

@@ -120,6 +120,56 @@ export function MascotMagneti({ מצב, סקין = 'קלאסי', קומבו = 1 
         falafel: false,
       };
     }
+    if (סקין === 'דרקון_להבה') {
+      return {
+        leftFill: '#dc2626', // אש פניקס
+        rightFill: '#f97316', // להבה כתומה
+        capFill: '#fef08a',
+        glow: '#ef4444',
+        crown: false,
+        falafel: false,
+      };
+    }
+    if (סקין === 'רעם_קוונטי') {
+      return {
+        leftFill: '#0284c7', // חשמל כחול
+        rightFill: '#06b6d4', // רעם קוונטי
+        capFill: '#e0f2fe',
+        glow: '#00f0ff',
+        crown: false,
+        falafel: false,
+      };
+    }
+    if (סקין === 'חור_שחור') {
+      return {
+        leftFill: '#7e22ce', // חלל אינדיגו
+        rightFill: '#d946ef', // נבולה מג׳נטה
+        capFill: '#0f172a',
+        glow: '#c084fc',
+        crown: false,
+        falafel: false,
+      };
+    }
+    if (סקין === 'יהלום_חלל') {
+      return {
+        leftFill: '#38bdf8', // יהלום פריזמטי
+        rightFill: '#f472b6', // הולוגרמה ורודה
+        capFill: '#fef08a',
+        glow: '#38bdf8',
+        crown: false,
+        falafel: false,
+      };
+    }
+    if (סקין === 'אלוהי_מגנט') {
+      return {
+        leftFill: '#fbbf24', // זהב אלמוות
+        rightFill: '#f59e0b', // שמש קדושה
+        capFill: '#ffffff',
+        glow: '#fde047',
+        crown: true,
+        falafel: false,
+      };
+    }
     // קלאסי
     return {
       leftFill: '#ef4444',
