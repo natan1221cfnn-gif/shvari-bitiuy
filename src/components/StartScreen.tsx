@@ -236,26 +236,61 @@ export function StartScreen() {
         </button>
 
         {/* בחירת רמת קושי */}
-        <div>
+        <div className="space-y-2">
           <div className="flex gap-2 justify-center">
-            {רמות.map((רמה) => (
-              <button
-                key={רמה}
-                onClick={() => שנההגדרות({ רמה })}
-                className="flex-1 py-2 rounded-2xl font-bold text-xs transition-all active:scale-95"
-                style={{
-                  fontFamily: '"Varela Round"',
-                  background: הגדרות.רמה === רמה
-                    ? 'linear-gradient(135deg, #f7971e, #ffd200)'
-                    : 'rgba(255,255,255,0.08)',
-                  color: הגדרות.רמה === רמה ? '#333' : 'white',
-                  border: הגדרות.רמה === רמה ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                }}
-              >
-                {רמה === 'קל' ? '😊 קל' : רמה === 'בינוני' ? '🔥 בינוני' : '💀 מטורף'}
-              </button>
-            ))}
+            {(['קל', 'בינוני', 'מטורף'] as const).map((רמה) => {
+              const active = הגדרות.רמה === רמה || (רמה === 'מטורף' && הגדרות.רמה === 'מטורף_x2');
+              return (
+                <button
+                  key={רמה}
+                  onClick={() => שנההגדרות({ רמה: רמה === 'מטורף' && הגדרות.רמה === 'מטורף_x2' ? 'מטורף_x2' : רמה })}
+                  className="flex-1 py-2 rounded-2xl font-bold text-xs transition-all active:scale-95 shadow-sm"
+                  style={{
+                    fontFamily: '"Varela Round"',
+                    background: active
+                      ? 'linear-gradient(135deg, #f7971e, #ffd200)'
+                      : 'rgba(255,255,255,0.08)',
+                    color: active ? '#1a0533' : 'white',
+                    border: active ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                  }}
+                >
+                  {רמה === 'קל' ? '😊 קל' : רמה === 'בינוני' ? '🔥 בינוני' : '💀 מטורף'}
+                </button>
+              );
+            })}
           </div>
+
+          {/* תת-בחירה למצב מטורף: x1 או x2 */}
+          {(הגדרות.רמה === 'מטורף' || הגדרות.רמה === 'מטורף_x2') && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex gap-2 p-1 bg-black/30 rounded-xl border border-red-500/30"
+            >
+              <button
+                onClick={() => שנההגדרות({ רמה: 'מטורף' })}
+                className={`flex-1 py-1.5 rounded-lg font-bold text-[11px] transition-all ${
+                  הגדרות.רמה === 'מטורף'
+                    ? 'bg-gradient-to-r from-red-600 to-amber-500 text-white shadow-md'
+                    : 'text-white/60 hover:text-white'
+                }`}
+                style={{ fontFamily: '"Varela Round"' }}
+              >
+                💀 מטורף (x1 רגיל)
+              </button>
+              <button
+                onClick={() => שנההגדרות({ רמה: 'מטורף_x2' })}
+                className={`flex-1 py-1.5 rounded-lg font-bold text-[11px] transition-all flex items-center justify-center gap-1 ${
+                  הגדרות.רמה === 'מטורף_x2'
+                    ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-red-500 text-white shadow-lg animate-pulse'
+                    : 'text-white/60 hover:text-white'
+                }`}
+                style={{ fontFamily: '"Varela Round"' }}
+              >
+                <span>🌪️ פסיכי לגמרי (x2)!</span>
+              </button>
+            </motion.div>
+          )}
         </div>
       </motion.div>
 

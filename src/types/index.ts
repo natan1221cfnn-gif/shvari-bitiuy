@@ -4,7 +4,7 @@ export interface ביטוי {
   קטגוריה?: string;
 }
 
-export type רמתקושי = 'קל' | 'בינוני' | 'מטורף';
+export type רמתקושי = 'קל' | 'בינוני' | 'מטורף' | 'מטורף_x2';
 
 export type מסך =
   | 'פתיחה'

@@ -5,15 +5,23 @@ import { useGameStore } from '../store/gameStore';
 import { useSound } from '../hooks/useSound';
 import { useHaptic } from '../hooks/useHaptic';
 import { כלהביטויים } from '../data/phrases';
-import type { ביטוי } from '../types';
+import type { ביטוי, רמתקושי } from '../types';
+
+const מהירויותדוקרב: Record<רמתקושי, number> = {
+  קל: 3000,
+  בינוני: 2200,
+  מטורף: 1500,
+  מטורף_x2: 900,
+};
 
 export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null }) {
   const { שםשחקן, שנהמסך } = useGameStore();
   const { נגןהצלחה, נגןכישלון, נגןרמהחדשה, נגןקומבו, נגןתקתוק } = useSound();
-  const { רטטהצלחה, רטטכישלון, רטטקומבו } = useHaptic();
+  const { רטטהצלחה, רטטכישלון, רטטקומבו, רטטקל } = useHaptic();
 
   // מצבי חדר
   const [מצבמסך, setמצבמסך] = useState<'lobby' | 'creating' | 'waiting' | 'joining' | 'countdown' | 'playing' | 'ended'>('lobby');
+  const [רמתקרבנבחרת, setרמתקרבנבחרת] = useState<רמתקושי>('בינוני');
   const [קודחדר, setקודחדר] = useState('');
   const [קודקלט, setקודקלט] = useState('');
   const [שםיריב, setשםיריב] = useState('');
@@ -29,7 +37,8 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
   const [ניקודשלי, setניקודשלי] = useState(0);
   const [פגיעותיריב, setפגיעותיריב] = useState(0);
   const [התקדמות, setהתקדמות] = useState(0);
-  const [סטטוססבב, setסטטוססבב] = useState<'רץ' | 'הצלחה' | 'פספוס'>('רץ');
+  const [באזורפגיעה, setבאזורפגיעה] = useState(false);
+  const [סטטוססבב, setסטטוססבב] = useState<'רץ' | 'הצלחה' | 'פספוס' | 'מוקדם'>('רץ');
 
   const peerRef = useRef<Peer | null>(null);
   const connRef = useRef<DataConnection | null>(null);
@@ -37,6 +46,7 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
   const התחלהRef = useRef(0);
   const roundActiveRef = useRef(false);
   const tappedRef = useRef(false);
+  const מהירותקרבRef = useRef(2200);
 
   const ביטוינוכחי = ביטוייקרב[אינדקסנוכחי] || כלהביטויים[0];
 
@@ -86,13 +96,15 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
             if (!indices.includes(r)) indices.push(r);
           }
 
-          // שליחת פתיחת משחק לאורח
+          // שליחת פתיחת משחק לאורח כולל רמת הקושי
           conn.send({
             type: 'START_MATCH',
             hostName: שםשחקן,
             indices,
+            difficulty: רמתקרבנבחרת,
           });
 
+          מהירותקרבRef.current = מהירויותדוקרב[רמתקרבנבחרת] || 2200;
           const phrases = indices.map((i) => כלהביטויים[i % כלהביטויים.length]);
           setביטוייקרב(phrases);
           setספירהלאחור(3);
@@ -110,8 +122,6 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
       });
 
       peer.on('error', (err) => {
-        console.error('Peer error:', err);
-        // אם הקוד תפוס - נסה שוב
         if (err.type === 'unavailable-id') {
           צורחדר();
         } else {
@@ -164,7 +174,6 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
         setמצבמסך('lobby');
       });
 
-      // Timeout של 8 שניות אם לא מתחבר
       setTimeout(() => {
         if (connRef.current && !connRef.current.open) {
           setהודעתשגיאה('❌ חדר לא נמצא או שפג תוקפו');
@@ -183,6 +192,10 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
 
     if (data.type === 'START_MATCH') {
       setשםיריב(data.hostName || 'יריב');
+      const diff: רמתקושי = data.difficulty || 'בינוני';
+      setרמתקרבנבחרת(diff);
+      מהירותקרבRef.current = מהירויותדוקרב[diff] || 2200;
+
       const phrases = (data.indices || []).map((i: number) => כלהביטויים[i % כלהביטויים.length]);
       setביטוייקרב(phrases);
       setספירהלאחור(3);
@@ -227,26 +240,36 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
     }
   }, [ספירהלאחור]); // eslint-disable-line
 
-  // 6. תנועת המגנט (2.2 שניות לסבב)
-  const מהירותקרב = 2200;
+  // 6. תנועת המגנט
   const התחלסבב = (אינדקס: number) => {
     cancelAnimationFrame(animRef.current);
     setאינדקסנוכחי(אינדקס);
     setסטטוססבב('רץ');
     setהתקדמות(0);
+    setבאזורפגיעה(false);
     tappedRef.current = false;
     roundActiveRef.current = true;
     התחלהRef.current = performance.now();
 
+    const speed = מהירותקרבRef.current;
+
     const loop = (now: number) => {
       if (!roundActiveRef.current) return;
       const elapsed = now - התחלהRef.current;
-      const prog = elapsed / מהירותקרב;
-      setהתקדמות(Math.min(prog, 1.15));
+      const prog = elapsed / speed;
+      setהתקדמות(Math.min(prog, 1.20));
 
-      if (prog >= 1.15) {
+      // אינדיקציית אזור פגיעה מדויקת (בין 65% ל-115%)
+      if (prog >= 0.65 && prog <= 1.15) {
+        setבאזורפגיעה(true);
+      } else {
+        setבאזורפגיעה(false);
+      }
+
+      if (prog >= 1.20) {
         roundActiveRef.current = false;
         setסטטוססבב('פספוס');
+        setבאזורפגיעה(false);
         נגןכישלון();
         רטטכישלון();
         setTimeout(() => התחלסבב((אינדקס + 1) % (ביטוייקרב.length || 1)), 800);
@@ -267,12 +290,14 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
 
     const now = performance.now();
     const elapsed = now - התחלהRef.current;
-    const prog = elapsed / מהירותקרב;
+    const prog = elapsed / מהירותקרבRef.current;
 
-    if (prog >= 0.70 && prog <= 1.08) {
+    // 🎯 1. חלון פגיעה מדויק ומרווח (65% עד 115%)
+    if (prog >= 0.65 && prog <= 1.15) {
       const newHits = פגיעותשלי + 1;
       const newScore = ניקודשלי + 150;
       setסטטוססבב('הצלחה');
+      setבאזורפגיעה(true);
       setפגיעותשלי(newHits);
       setניקודשלי(newScore);
       נגןהצלחה();
@@ -293,8 +318,17 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
       } else {
         setTimeout(() => התחלסבב((אינדקסנוכחי + 1) % (ביטוייקרב.length || 1)), 600);
       }
+    } else if (prog < 0.65) {
+      // ⏳ מוקדם מדי!
+      setסטטוססבב('מוקדם');
+      setבאזורפגיעה(false);
+      נגןכישלון();
+      רטטקל();
+      setTimeout(() => התחלסבב((אינדקסנוכחי + 1) % (ביטוייקרב.length || 1)), 800);
     } else {
+      // ⏱️ מאוחר מדי
       setסטטוססבב('פספוס');
+      setבאזורפגיעה(false);
       נגןכישלון();
       רטטכישלון();
       setTimeout(() => התחלסבב((אינדקסנוכחי + 1) % (ביטוייקרב.length || 1)), 800);
@@ -373,15 +407,42 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
 
       {/* ━━ 1. לובי יצירת חדר / הצטרפות ━━ */}
       {מצבמסך === 'lobby' && (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6 max-w-sm mx-auto w-full">
-          <div className="text-center space-y-2">
-            <div className="text-6xl animate-bounce">⚔️</div>
+        <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-5 max-w-sm mx-auto w-full">
+          <div className="text-center space-y-1">
+            <div className="text-5xl animate-bounce">⚔️</div>
             <h2 className="text-2xl font-bold text-white" style={{ fontFamily: '"Varela Round"' }}>
               קרב ישראלי ראש בראש
             </h2>
             <p className="text-white/60 text-xs" style={{ fontFamily: '"Varela Round"' }}>
-              התחרו על אותם ביטויים בזמן אמת — הראשון שמגיע ל-10 פגיעות מנצח!
+              הראשון שמגיע ל-10 פגיעות מנצח את הקרב! 🏆
             </p>
+          </div>
+
+          {/* בחירת רמת קושי לפני יצירת החדר */}
+          <div className="w-full space-y-2 bg-white/5 p-3 rounded-2xl border border-white/10">
+            <div className="text-white/70 text-xs font-bold text-center">🎯 בחר מהירות לקרב:</div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {[
+                { id: 'קל' as const, label: '😊 קל', desc: 'רגוע' },
+                { id: 'בינוני' as const, label: '🔥 בינוני', desc: 'מאוזן' },
+                { id: 'מטורף' as const, label: '💀 מטורף (x1)', desc: 'מהיר' },
+                { id: 'מטורף_x2' as const, label: '🌪️ פסיכי (x2)', desc: 'אולטרה!' },
+              ].map((lvl) => (
+                <button
+                  key={lvl.id}
+                  onClick={() => setרמתקרבנבחרת(lvl.id)}
+                  className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex flex-col items-center ${
+                    רמתקרבנבחרת === lvl.id
+                      ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-purple-950 shadow-md scale-102 border-2 border-white'
+                      : 'bg-white/10 text-white/70 hover:bg-white/15'
+                  }`}
+                  style={{ fontFamily: '"Varela Round"' }}
+                >
+                  <span>{lvl.label}</span>
+                  <span className="text-[10px] opacity-75">{lvl.desc}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="w-full space-y-3">
@@ -391,13 +452,13 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
               style={{ fontFamily: '"Varela Round"' }}
             >
               <span>🎲</span>
-              <span>צור חדר קרב חדש</span>
+              <span>צור חדר קרב במהירות שנבחרה</span>
             </button>
 
-            <div className="flex items-center gap-2 pt-2">
+            <div className="flex items-center gap-2 pt-1">
               <input
                 type="text"
-                placeholder="הקלד קוד חדר (4 ספרות)"
+                placeholder="קוד חדר (4 ספרות)"
                 value={קודקלט}
                 onChange={(e) => setקודקלט(e.target.value)}
                 maxLength={4}
@@ -446,7 +507,7 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
 
       {/* ━━ 4. חדר מוכן — ממתין ליריב שיכנס ━━ */}
       {מצבמסך === 'waiting' && (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6 max-w-sm mx-auto w-full text-center">
+        <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-5 max-w-sm mx-auto w-full text-center">
           <div className="relative">
             <div className="w-24 h-24 rounded-full bg-amber-500/20 border-2 border-yellow-400 flex items-center justify-center text-4xl animate-pulse">
               ⏳
@@ -458,6 +519,9 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
             <div className="text-white/60 text-xs mb-1 font-bold">החדר מוכן! קוד החדר שלך:</div>
             <div className="text-4xl font-extrabold text-yellow-300 tracking-widest bg-white/10 px-6 py-2 rounded-2xl border border-white/20 inline-block">
               {קודחדר}
+            </div>
+            <div className="text-xs text-amber-300 mt-2 font-bold">
+              רמת מהירות: {רמתקרבנבחרת === 'קל' ? '😊 קל' : רמתקרבנבחרת === 'בינוני' ? '🔥 בינוני' : רמתקרבנבחרת === 'מטורף' ? '💀 מטורף' : '🌪️ פסיכי x2'}
             </div>
           </div>
 
@@ -559,8 +623,16 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
           {/* אזור המשחק והמגנטים */}
           <div className="flex-1 flex flex-col items-center justify-center relative my-4">
             {/* מגנט היעד התחתון של השחקן */}
-            <div className="absolute bottom-8 w-44 h-16 rounded-2xl bg-white/10 border-2 border-dashed border-yellow-400/60 flex items-center justify-center shadow-inner">
-              <span className="text-2xl font-bold text-yellow-300">{ביטוינוכחי.ימין}</span>
+            <div
+              className={`absolute bottom-8 w-48 h-18 rounded-2xl flex items-center justify-center transition-all duration-150 ${
+                באזורפגיעה
+                  ? 'bg-amber-400/25 border-4 border-yellow-400 shadow-[0_0_35px_rgba(250,204,21,0.8)] scale-105'
+                  : 'bg-white/10 border-2 border-dashed border-yellow-400/40'
+              }`}
+            >
+              <span className={`text-2xl font-bold ${באזורפגיעה ? 'text-yellow-200 animate-pulse' : 'text-yellow-300/80'}`}>
+                {ביטוינוכחי.ימין}
+              </span>
             </div>
 
             {/* המגנט שזז לעבר השחקן */}
@@ -569,11 +641,15 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
                 position: 'absolute',
                 top: `${התקדמות * 75}%`,
               }}
-              className={`w-44 h-16 rounded-2xl flex items-center justify-center font-bold text-2xl shadow-2xl transition-transform ${
+              className={`w-48 h-18 rounded-2xl flex items-center justify-center font-bold text-2xl shadow-2xl transition-transform ${
                 סטטוססבב === 'הצלחה'
                   ? 'bg-emerald-500 text-white scale-110 border-2 border-white'
+                  : סטטוססבב === 'מוקדם'
+                  ? 'bg-orange-500 text-white border-2 border-white'
                   : סטטוססבב === 'פספוס'
                   ? 'bg-red-500 text-white border-2 border-white opacity-80'
+                  : באזורפגיעה
+                  ? 'bg-gradient-to-r from-amber-400 to-yellow-300 text-purple-950 border-4 border-white shadow-[0_0_40px_rgba(255,215,0,0.9)] scale-108'
                   : 'bg-gradient-to-r from-amber-500 to-yellow-400 text-purple-950 border-2 border-white'
               }`}
             >
@@ -581,14 +657,33 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
             </motion.div>
           </div>
 
-          {/* כפתור הקשה גדול */}
+          {/* 🎯 כפתור אינדיקציה חכם: אומר במדויק מתי להמתין ומתי ללחוץ! */}
           <div className="w-full pb-safe-bottom pb-4">
             <button
               onClick={handleTap}
-              className="w-full py-5 rounded-3xl font-bold text-2xl bg-gradient-to-r from-amber-500 to-yellow-400 text-purple-950 shadow-2xl active:scale-95 transition-all border-2 border-white"
+              className={`w-full py-4.5 rounded-3xl font-bold text-xl shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-2 border-2 ${
+                באזורפגיעה
+                  ? 'bg-gradient-to-r from-emerald-400 via-amber-400 to-yellow-300 text-purple-950 border-white shadow-[0_0_35px_rgba(250,204,21,0.9)] animate-pulse scale-102'
+                  : סטטוססבב === 'מוקדם'
+                  ? 'bg-orange-500 text-white border-orange-300'
+                  : 'bg-white/10 text-white/50 border-white/20 opacity-85'
+              }`}
               style={{ fontFamily: '"Varela Round"' }}
             >
-              חבר עכשיו! 🧲
+              {באזורפגיעה ? (
+                <>
+                  <span className="text-2xl animate-bounce">⚡</span>
+                  <span className="text-2xl font-extrabold text-purple-950">לחץ עכשיו! 🧲</span>
+                  <span className="text-2xl animate-bounce">⚡</span>
+                </>
+              ) : סטטוססבב === 'מוקדם' ? (
+                <span>⏳ מוקדם מדי!</span>
+              ) : (
+                <>
+                  <span className="animate-spin text-lg">⏳</span>
+                  <span>המתן למפגש המגנטים...</span>
+                </>
+              )}
             </button>
           </div>
         </div>
