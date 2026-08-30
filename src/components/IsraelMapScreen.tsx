@@ -122,9 +122,16 @@ export function IsraelMapScreen() {
           );
 
           return (
-            <div key={אזור.מזהה} id={`region-banner-${אזור.מזהה}`} className="relative space-y-5">
+            <div
+              key={אזור.מזהה}
+              id={`region-banner-${אזור.מזהה}`}
+              className="relative space-y-5 rounded-3xl p-3 border border-white/5 overflow-hidden"
+              style={{
+                background: `linear-gradient(180deg, ${אזור.צבעניאון}12 0%, rgba(10,4,20,0.6) 100%)`,
+              }}
+            >
               {/* 🏙️ באנר אזור גיאוגרפי עם עיצוב GTA VI */}
-              <div className="flex items-center justify-center my-6">
+              <div className="flex items-center justify-center my-4">
                 <div
                   className="px-5 py-2.5 rounded-2xl border-2 shadow-2xl flex items-center gap-3 backdrop-blur-xl"
                   style={{

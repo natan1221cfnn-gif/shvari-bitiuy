@@ -309,17 +309,21 @@ export function GameScreen() {
       if (מכפילחדש > 1) רטטקומבו(מכפילחדש);
       triggerJuice('success');
 
-      // 🗺️ בדיקת סיום שלב במפת ישראל
-      const מידעשלב = קבלשלבמפה(שלב);
-      const סךהצלחותמעודכן = הצלחות + 1;
-      if (סךהצלחותמעודכן >= מידעשלב.יעדפגיעות && !הואטירוף) {
-        const { שמורכוכבישלב, עדכןשלבמפה, שלבמפהנוכחי, לבבות: currLives } = useGameStore.getState();
-        const כוכבים = currLives >= 3 ? 3 : currLives >= 2 ? 2 : 1;
-        שמורכוכבישלב(שלב, כוכבים);
-        עדכןשלבמפה(Math.max(שלבמפהנוכחי, שלב + 1));
-        setTimeout(() => {
-          setShowVictoryModal(true);
-        }, 500);
+      // 🗺️ בדיקת סיום שלב במפת ישראל - בלעדי אך ורק למצב מפה!
+      if (מצבמשחק === 'מפה') {
+        const מידעשלב = קבלשלבמפה(שלב);
+        const סךהצלחותמעודכן = הצלחות + 1;
+        if (סךהצלחותמעודכן >= מידעשלב.יעדפגיעות) {
+          cancelAnimationFrame(animRef.current);
+          roundActiveRef.current = false;
+          const { שמורכוכבישלב, עדכןשלבמפה, שלבמפהנוכחי, לבבות: currLives } = useGameStore.getState();
+          const כוכבים = currLives >= 3 ? 3 : currLives >= 2 ? 2 : 1;
+          שמורכוכבישלב(שלב, כוכבים);
+          עדכןשלבמפה(Math.max(שלבמפהנוכחי, שלב + 1));
+          setTimeout(() => {
+            setShowVictoryModal(true);
+          }, 400);
+        }
       }
       return;
     }
