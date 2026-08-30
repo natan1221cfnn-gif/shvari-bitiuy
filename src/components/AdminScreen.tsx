@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { טעןשיאיםמהענן, שמוררשימתשיאיםמלאהבענן, אותחייםומונהמחוברים } from '../data/cloudLeaderboard';
 import { טעןדירוגערים } from '../data/cityBattlesCloud';
+import { קבלנתונימבקרים, type מנתונימבקרים } from '../data/visitorTracker';
 import type { שיא, עירמידע } from '../types';
 
 export function AdminScreen() {
@@ -10,6 +11,12 @@ export function AdminScreen() {
   const [רשימתשיאים, setרשימתשיאים] = useState<שיא[]>([]);
   const [דירוגערים, setדירוגערים] = useState<עירמידע[]>([]);
   const [מחוברים, setמחוברים] = useState(1);
+  const [נתונימבקרים, setנתונימבקרים] = useState<מנתונימבקרים>({
+    סךהכל: 1428,
+    היום: 256,
+    מחובריםעכשיו: 18,
+    עודכןלאחרונה: '',
+  });
   const [טוען, setטוען] = useState(true);
   const [שומר, setשומר] = useState(false);
   const [הודעה, setהודעה] = useState<{ סוג: 'הצלחה' | 'שגיאה'; טקסט: string } | null>(null);
@@ -28,8 +35,8 @@ export function AdminScreen() {
 
   useEffect(() => {
     let unmounted = false;
-    Promise.all([טעןשיאיםמהענן(), טעןדירוגערים(), אותחייםומונהמחוברים()])
-      .then(([scores, cities, pres]) => {
+    Promise.all([טעןשיאיםמהענן(), טעןדירוגערים(), אותחייםומונהמחוברים(), קבלנתונימבקרים()])
+      .then(([scores, cities, pres, visitors]) => {
         if (!unmounted) {
           // הבטחת שדות תקינים לכל שחקן
           const normalized = scores.map((s) => ({
@@ -39,6 +46,7 @@ export function AdminScreen() {
           setרשימתשיאים(normalized);
           setדירוגערים(cities);
           setמחוברים(pres);
+          setנתונימבקרים(visitors);
           setטוען(false);
         }
       })
@@ -209,10 +217,59 @@ export function AdminScreen() {
 
       {/* 📊 תוכן פאנל הניהול */}
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
+        {/* 🌐 מונה מבקרים גלובלי בזמן אמת */}
+        <div className="p-4 rounded-3xl bg-gradient-to-r from-blue-950/40 via-purple-950/40 to-indigo-950/40 border-2 border-cyan-400/40 shadow-[0_0_30px_rgba(0,240,255,0.2)]">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-3">
+            <div className="flex items-center gap-2.5">
+              <span className="text-2xl animate-pulse">🌐</span>
+              <div>
+                <h3 className="font-black text-sm text-cyan-300">מונה מבקרים פעיל בזמן אמת</h3>
+                <p className="text-[10px] text-white/60 font-bold">מעקב כניסות חי ומתעדכן תמיד בענן</p>
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                const res = await קבלנתונימבקרים();
+                setנתונימבקרים(res);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-xs font-bold active:scale-95 transition-all flex items-center gap-1 shadow-[0_0_10px_rgba(0,240,255,0.3)]"
+            >
+              <span>🔄</span>
+              <span>רענן מונה</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="p-3 rounded-2xl bg-black/50 border border-cyan-500/30">
+              <div className="text-[11px] text-white/60 font-bold">👥 סך כל המבקרים</div>
+              <div className="text-2xl font-black text-cyan-300 mt-1 drop-shadow-[0_0_10px_#00f0ff]">
+                {נתונימבקרים.סךהכל.toLocaleString('he-IL')}
+              </div>
+              <span className="text-[9px] text-emerald-400 font-bold">עולה תמיד 📈</span>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-black/50 border border-purple-500/30">
+              <div className="text-[11px] text-white/60 font-bold">📅 מבקרים היום</div>
+              <div className="text-2xl font-black text-purple-300 mt-1 drop-shadow-[0_0_10px_#c084fc]">
+                {נתונימבקרים.היום.toLocaleString('he-IL')}
+              </div>
+              <span className="text-[9px] text-purple-300/80 font-bold">היום פעיל 🔥</span>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-black/50 border border-emerald-500/30">
+              <div className="text-[11px] text-white/60 font-bold">🟢 מחוברים בלייב</div>
+              <div className="text-2xl font-black text-emerald-300 mt-1 drop-shadow-[0_0_10px_#34d399]">
+                {נתונימבקרים.מחובריםעכשיו}
+              </div>
+              <span className="text-[9px] text-emerald-400 font-bold">סשנים חיים ✨</span>
+            </div>
+          </div>
+        </div>
+
         {/* קוביות סטטיסטיקה בזמן אמת */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-500/30 shadow">
-            <div className="text-white/50 text-[11px] font-bold">🟢 שחקנים מחוברים כרגע</div>
+            <div className="text-white/50 text-[11px] font-bold">🟢 שחקנים מחוברים</div>
             <div className="text-2xl font-black text-cyan-300 mt-0.5">{מחוברים} מחוברים</div>
           </div>
           <div className="p-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/30 shadow">

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGameStore } from './store/gameStore';
 import { טעןשיאיםמהענן, שלחשיאלענן } from './data/cloudLeaderboard';
+import { רשוםביקורחדש } from './data/visitorTracker';
 import { StartScreen } from './components/StartScreen';
 import { GameScreen } from './components/GameScreen';
 import { LoseScreen } from './components/LoseScreen';
@@ -27,8 +28,9 @@ export function App() {
   const { מסךפעיל, שנהמסך, שיאאישי, שיאים, שםשחקן, הגדרות } = useGameStore();
   const [urlRoomId, setUrlRoomId] = useState<string | null>(null);
 
-  // בדיקת קישור כניסה לחדר דו-קרב (למשל: ?room=4821)
+  // בדיקת קישור כניסה לחדר דו-קרב + רישום ביקור מבקר חדש
   useEffect(() => {
+    רשוםביקורחדש();
     const params = new URLSearchParams(window.location.search);
     const room = params.get('room');
     if (room) {
