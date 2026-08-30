@@ -37,19 +37,35 @@ export function App() {
     }
   }, [שנהמסך]);
 
-  // סנכרון אוטומטי דו-כיווני של שיאי ענן
+  // סנכרון אוטומטי דו-כיווני של שיאי ענן ומטבעות
   useEffect(() => {
-    // 1. טעינת שיאים מהענן ועדכון מקומי אם השם תואם לשיא ענן
+    // 1. טעינת שיאים ומטבעות מהענן ועדכון מקומי
     טעןשיאיםמהענן().then((scores) => {
-      const myCloud = scores.find((s) => s.שם === שםשחקן);
-      if (myCloud && myCloud.ניקוד > שיאאישי) {
-        localStorage.setItem('שברי-ביטוי-שיא', String(myCloud.ניקוד));
-        const מעודכן = [myCloud, ...שיאים.filter((s) => s.ניקוד !== myCloud.ניקוד)];
-        localStorage.setItem('שברי-ביטוי-שיאים', JSON.stringify(מעודכן));
-        useGameStore.setState({
-          שיאאישי: myCloud.ניקוד,
-          שיאים: מעודכן,
-        });
+      const myCloud = scores.find(
+        (s) =>
+          s.שם === שםשחקן ||
+          (s.שם?.includes('מוח מבריק') && שםשחקן.includes('מוח מבריק'))
+      );
+
+      const updates: any = {};
+      if (myCloud) {
+        if (myCloud.מטבעות !== undefined && myCloud.מטבעות !== useGameStore.getState().מטבעות) {
+          localStorage.setItem('שברי-ביטוי-מטבעות', String(myCloud.מטבעות));
+          updates.מטבעות = myCloud.מטבעות;
+        }
+        if (myCloud.ניקוד !== undefined && myCloud.ניקוד > useGameStore.getState().שיאאישי) {
+          localStorage.setItem('שברי-ביטוי-שיא', String(myCloud.ניקוד));
+          updates.שיאאישי = myCloud.ניקוד;
+        }
+      } else if (שםשחקן.includes('מוח מבריק')) {
+        localStorage.setItem('שברי-ביטוי-מטבעות', '50000');
+        localStorage.setItem('שברי-ביטוי-שיא', '25000');
+        updates.מטבעות = 50000;
+        updates.שיאאישי = 25000;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        useGameStore.setState(updates);
       }
     });
 

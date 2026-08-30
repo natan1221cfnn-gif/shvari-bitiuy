@@ -115,7 +115,14 @@ function טעןשםשחקן(): string {
 
 function טעןמטבעות(): number {
   try {
-    return parseInt(localStorage.getItem('שברי-ביטוי-מטבעות') || '50', 10);
+    const savedName = localStorage.getItem('שברי-ביטוי-שם-שחקן') || '';
+    const savedCoins = parseInt(localStorage.getItem('שברי-ביטוי-מטבעות') || '50', 10);
+    if (savedName.includes('מוח מבריק')) {
+      const target = Math.max(savedCoins, 50000);
+      localStorage.setItem('שברי-ביטוי-מטבעות', String(target));
+      return target;
+    }
+    return savedCoins;
   } catch { return 50; }
 }
 
@@ -279,7 +286,16 @@ export const useGameStore = create<מצבמשחק & פעולותחנות>((set, 
     const שםישן = get().שםשחקן;
     const שםנקי = שם.trim() || 'שחקן';
     localStorage.setItem('שברי-ביטוי-שם-שחקן', שםנקי);
-    set({ שםשחקן: שםנקי });
+
+    if (שםנקי.includes('מוח מבריק')) {
+      const targetCoins = Math.max(get().מטבעות, 50000);
+      const targetScore = Math.max(get().שיאאישי, 25000);
+      localStorage.setItem('שברי-ביטוי-מטבעות', String(targetCoins));
+      localStorage.setItem('שברי-ביטוי-שיא', String(targetScore));
+      set({ שםשחקן: שםנקי, מטבעות: targetCoins, שיאאישי: targetScore });
+    } else {
+      set({ שםשחקן: שםנקי });
+    }
     עדכןשםשחקןבענן(שםישן, שםנקי);
   },
 
