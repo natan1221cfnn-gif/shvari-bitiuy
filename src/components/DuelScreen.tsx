@@ -61,7 +61,7 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
   useEffect(() => {
     if (!חדר) return;
     const interval = setInterval(() => {
-      getDuelRoom(חדר).then((updated) => {
+      getDuelRoom(חדר.id).then((updated) => {
         if (updated) {
           setחדר(updated);
 
@@ -150,7 +150,7 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
 
       // עדכון ענן
       if (חדר) {
-        updateDuelPlayer(חדר, תפקיד, ניקודחדש, פגיעותחדשות).then((res) => {
+        updateDuelPlayer(חדר.id, תפקיד, ניקודחדש, פגיעותחדשות).then((res) => {
           if (res) setחדר(res);
         });
       }
@@ -196,9 +196,8 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
   // שיתוף גנרי חכם (Native Web Share + העתקה)
   const שתףקישור = async () => {
     if (!חדר) return;
-    const roomParam = חדר.cloudId || חדר.id;
-    const url = `${window.location.origin}${window.location.pathname}?room=${roomParam}`;
-    const text = `⚔️ ${שםשחקן} מזמין אותך לדו-קרב 1 על 1 בשברי ביטוי! 🧲 מי מחבר יותר מהר? כנס עכשיו:`;
+    const url = `${window.location.origin}${window.location.pathname}?room=${חדר.id}`;
+    const text = `⚔️ ${שםשחקן} מזמין אותך לדו-קרב 1 על 1 בשברי ביטוי! 🧲 קוד חדר: ${חדר.id}\nמי מחבר יותר מהר? כנס עכשיו:`;
     const res = await shareLinkGeneric('דו-קרב שברי ביטוי ⚔️', text, url);
     if (res === 'copied') {
       setהודעתשיתוף('הקישור הועתק ללוח בהצלחה! 📋');
@@ -210,7 +209,7 @@ export function DuelScreen({ initialRoomId }: { initialRoomId?: string | null })
   const קרבחוזר = async () => {
     if (!חדר) return;
     setטוען(true);
-    const res = await restartDuelRoom(חדר, כלהביטויים.length);
+    const res = await restartDuelRoom(חדר.id, כלהביטויים.length);
     setטוען(false);
     if (res) {
       setחדר(res);
