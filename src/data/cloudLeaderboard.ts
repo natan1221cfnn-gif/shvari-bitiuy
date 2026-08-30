@@ -3,14 +3,30 @@ import type { שיא } from '../types';
 const CLOUD_ENDPOINT = 'https://api.restful-api.dev/objects/ff808181a04ccf2d01a05043f1ea0e5a';
 const PRESENCE_ENDPOINT = 'https://api.restful-api.dev/objects/ff808181a04ccf2d01a0504a60140e69';
 
-// רשימת שיאים אמיתיים מוכחת (Fallback מובטח למניעת תצוגה ריקה)
+// רשימת שיאים אמיתיים מוכחת (Fallback מובטח)
 const שיאיםאמיתייםברירתמחדל: שיא[] = [
+  {
+    שם: 'חבר של בוסיקו',
+    ניקוד: 154202,
+    תאריך: '30.8.2026',
+    רמה: 'מטורף',
+    שלב: 100,
+    מצב: 'רגיל',
+  },
   {
     שם: 'בוסיקו מספר 1',
     ניקוד: 102876,
     תאריך: '30.8.2026',
     רמה: 'מטורף',
     שלב: 100,
+    מצב: 'רגיל',
+  },
+  {
+    שם: 'פלאפל מאסטר 🧆',
+    ניקוד: 18623,
+    תאריך: '30.8.2026',
+    רמה: 'מטורף',
+    שלב: 20,
     מצב: 'רגיל',
   },
   {
@@ -36,15 +52,13 @@ function קבלמזההמכשיר(): string {
   }
 }
 
-// 🛡️ פונקציית סינון ומניעת כפילויות קשיחה (כל שחקן מופיע פעם אחת בלבד בשיא הגבוה ביותר שלו!)
+// 🛡️ סינון ומניעת כפילויות קשיחה
 export function סנןונקהכפילויות(רשימה: שיא[]): שיא[] {
   const מפה = new Map<string, שיא>();
 
-  // תמיד ודא ששיאי האמת קיימים
   for (const ש of [...שיאיםאמיתייםברירתמחדל, ...רשימה]) {
     if (!ש || !ש.ניקוד || ש.ניקוד <= 0) continue;
     
-    // ניקוי ואיחוד שמות ישנים
     let שםנקי = (ש.שם || 'שחקן').trim();
     if (שםנקי.includes('8819') || שםנקי === 'בננה' || שםנקי === 'שחקן#8819') {
       שםנקי = 'בוסיקו מספר 1';
@@ -63,19 +77,25 @@ export function סנןונקהכפילויות(רשימה: שיא[]): שיא[] {
     .slice(0, 50);
 }
 
+// 🚀 טעינה סופר-מהירה עם Cache-Busting למניעת שמירת עותק ישן
 export async function טעןשיאיםמהענן(): Promise<שיא[]> {
   try {
-    const res = await fetch(CLOUD_ENDPOINT, { cache: 'no-store' });
-    if (!res.ok) return סנןונקהכפילויות([]);
-    const json = await res.json();
-    const scores = json?.data?.scores;
-    if (Array.isArray(scores) && scores.length > 0) {
-      const filtered = סנןונקהכפילויות(scores);
-      localStorage.setItem('shvari_cached_cloud_scores', JSON.stringify(filtered));
-      return filtered;
+    const url = `${CLOUD_ENDPOINT}?_t=${Date.now()}`;
+    const res = await fetch(url, {
+      cache: 'no-store',
+      headers: { 'Accept': 'application/json' },
+    });
+    if (res.ok) {
+      const json = await res.json();
+      const scores = json?.data?.scores;
+      if (Array.isArray(scores) && scores.length > 0) {
+        const filtered = סנןונקהכפילויות(scores);
+        localStorage.setItem('shvari_cached_cloud_scores', JSON.stringify(filtered));
+        return filtered;
+      }
     }
   } catch {
-    /* fallback */
+    /* ignore */
   }
 
   try {
@@ -84,7 +104,7 @@ export async function טעןשיאיםמהענן(): Promise<שיא[]> {
       return סנןונקהכפילויות(JSON.parse(cached));
     }
   } catch {
-    /* fallback */
+    /* ignore */
   }
 
   return סנןונקהכפילויות([]);
@@ -95,7 +115,6 @@ export async function שלחשיאלענן(שיאחדש: שיא): Promise<void> 
     if (!שיאחדש.ניקוד || שיאחדש.ניקוד <= 0) return;
     const קיימים = await טעןשיאיםמהענן();
 
-    // הוספה וסינון כפילויות קשיח
     const מעודכן = סנןונקהכפילויות([...קיימים, שיאחדש]);
     localStorage.setItem('shvari_cached_cloud_scores', JSON.stringify(מעודכן));
 
@@ -112,7 +131,7 @@ export async function שלחשיאלענן(שיאחדש: שיא): Promise<void> 
   }
 }
 
-// 🔄 עדכון אוטומטי של שם השחקן בלוח השיאים העולמי
+// 🔄 עדכון שם שחקן
 export async function עדכןשםשחקןבענן(שםישן: string, שםחדש: string): Promise<void> {
   try {
     if (!שםחדש || שםישן === שםחדש) return;
@@ -141,17 +160,17 @@ export async function עדכןשםשחקןבענן(שםישן: string, שםחד�
   }
 }
 
-// 🟢 מונה שחקנים מחוברים אמיתי בזמן אמת (100% Real Live Online Counter)
+// 🟢 מונה שחקנים מחוברים אמיתי בזמן אמת
 export async function אותחייםומונהמחוברים(): Promise<number> {
   try {
     const deviceId = קבלמזההמכשיר();
     const now = Date.now();
-    const res = await fetch(PRESENCE_ENDPOINT, { cache: 'no-store' });
+    const url = `${PRESENCE_ENDPOINT}?_t=${now}`;
+    const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) return 1;
     const json = await res.json();
     const active: Record<string, number> = json?.data?.active || {};
 
-    // ניקוי מחוברים שלא שלחו אות חיים מעל 50 שניות
     const cleaned: Record<string, number> = {};
     for (const [id, time] of Object.entries(active)) {
       if (now - time < 50000) {
@@ -160,7 +179,6 @@ export async function אותחייםומונהמחוברים(): Promise<number> 
     }
     cleaned[deviceId] = now;
 
-    // עדכון מסד הנתונים
     fetch(PRESENCE_ENDPOINT, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
